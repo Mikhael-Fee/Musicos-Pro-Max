@@ -9,16 +9,18 @@
     const note = scene.chord?.notes.find(n => n.pc === pc) || scene.scale?.find(n => n.pc === pc);
     return type === 'degrees' ? (note?.role || note?.degree || '·') : T.label(note?.name || pcName(pc), type);
   }
+  function sourceOf(n) { return n.instrument || (n.string === undefined ? 'piano' : 'guitar'); }
   function chosen(scene, midi, string, fret) {
-    return scene.selected?.some(n => string === undefined ? n.midi === midi : n.string === string && n.fret === fret);
+    const instrument = string === undefined ? 'piano' : 'guitar';
+    return scene.selected?.some(n => sourceOf(n) === instrument && (instrument === 'piano' ? n.midi === midi : n.string === string && n.fret === fret));
   }
   function classes(scene, pc, midi, string, fret, active) {
     const rootPc = scene.chord?.root ?? scene.scale?.[0].pc;
-    return `${active ? (pc === rootPc ? 'root' : 'active') : ''} ${chosen(scene, midi, string, fret) ? 'chosen' : ''}`;
+    return `${!scene.hideLabels && /[#b]/.test(noteName(pc, scene)) ? 'altered' : ''} ${active ? (pc === rootPc ? 'root' : 'active') : ''} ${chosen(scene, midi, string, fret) ? 'chosen' : ''}`;
   }
   function renderPiano(scene, options) {
-    const pitches = scene.kind === 'chord' ? T.pianoVoicing(scene.chord, options.inversion) : scene.pitches || [];
-    const selected = scene.selected?.map(n => n.midi) || [];
+    const pitches = scene.kind === 'chord' ? T.pianoVoicing(scene.chord, options.inversion, options.pianoLayout) : scene.pitchesByInstrument?.piano || [];
+    const selected = scene.selected?.filter(n => sourceOf(n) === 'piano').map(n => n.midi) || [];
     const lo = Math.min(48, ...pitches, ...selected), hi = Math.max(71, ...pitches, ...selected);
     const start = Math.floor(lo / 12) * 12, end = Math.floor(hi / 12) * 12 + 11;
     const whiteCount = Array.from({ length: end - start + 1 }, (_, i) => i + start).filter(m => ![1, 3, 6, 8, 10].includes(m % 12)).length;
@@ -34,7 +36,7 @@
     }
     $('piano-render').style.setProperty('--piano-min', `${Math.max(320, whiteCount * 24)}px`);
     $('piano-render').innerHTML = html;
-    $('piano-register').textContent = `C${start / 12 - 1}–B${Math.floor(end / 12) - 1} · toque para ouvir`;
+    $('piano-register').textContent = `C${start / 12 - 1}–B${Math.floor(end / 12) - 1}${scene.kind === 'chord' ? ' · baixo: ' + label(pitches[0] % 12, scene, 'letters') + (Math.floor(pitches[0] / 12) - 1) : ' · toque para ouvir'}`;
   }
   function renderDiagram(scene, options) {
     const v = G.voicing(scene.chord, options.guitarView === 'compact');
@@ -68,7 +70,7 @@
   }
   function renderFretboard(scene, options) {
     const position = Number(options.position), all = options.guitarView === 'all';
-    const start = all ? 0 : position, end = all ? Math.max(12, ...(scene.selected || []).map(n => n.fret || 0)) : position + 4;
+    const start = all ? 0 : position, end = all ? Math.max(12, ...(scene.selected || []).filter(n => sourceOf(n) === 'guitar').map(n => n.fret || 0)) : position + 4;
     const frets = end - start + 1, allowed = scene.kind === 'custom' ? [] : scene.chord?.notes || scene.scale || [];
     const path = scene.kind === 'scale' && options.guitarView === 'compact' ? G.ascendingPath(scene.scale, position) : null;
     let html = `<div class="guitar-scroll"><div class="fretboard" style="--frets:${frets};--board-min:${28 + frets * (all ? 43 : 45)}px">`;
@@ -76,7 +78,7 @@
       html += `<span class="string-name">${6 - s}ª ${['E', 'A', 'D', 'G', 'B', 'e'][s]}</span>`;
       for (let fret = start; fret <= end; fret++) {
         const midi = G.TUNING[s] + fret, pc = midi % 12;
-        const active = !scene.hideLabels && (path ? path.some(n => n.string === s && n.fret === fret) : allowed.some(n => n.pc === pc)) || scene.pitches?.includes(midi);
+        const active = !scene.hideLabels && (path ? path.some(n => n.string === s && n.fret === fret) : allowed.some(n => n.pc === pc)) || scene.pitchesByInstrument?.guitar?.includes(midi);
         const text = scene.hideLabels ? '' : label(pc, scene, options.labels);
         html += `<span class="fret-cell${fret === 0 ? ' nut' : ''}"><button type="button" id="guitar-${s}-${fret}" data-midi="${midi}" data-string="${s}" data-fret="${fret}" class="${classes(scene, pc, midi, s, fret, active)}" aria-label="Corda ${6 - s}, casa ${fret}${scene.hideLabels ? '' : ', ' + escape(T.label(noteName(pc, scene), 'solfege'))}" aria-pressed="${!!chosen(scene, midi, s, fret)}">${escape(text)}</button></span>`;
       }
@@ -99,6 +101,7 @@
     if (scene.kind === 'chord' && !scene.forceBoard && options.guitarView !== 'all') renderDiagram(scene, options);
     else renderFretboard(scene, options);
     renderPiano(scene, options);
+    $('play-guitar').disabled = $('play-scene').disabled; $('play-piano').disabled = $('play-scene').disabled;
     if (document.querySelector('.guitar-scroll')) document.querySelector('.guitar-scroll').scrollLeft = scroll;
     document.querySelector('.piano-scroll').scrollLeft = pianoScroll;
     if (focusedId && /^(piano-key-|guitar-|chord-string-)/.test(focusedId)) $(focusedId)?.focus({ preventScroll: true });

@@ -55,17 +55,30 @@
   function requiredNotes(chord) {
     return chord.notes.length <= 4 ? chord.notes : chord.notes.filter((_, i) => [0, 1, 3, chord.notes.length - 1].includes(i));
   }
-  function pianoVoicing(chord, inversion = 0) {
-    const pitches = chord.intervals.map(i => 48 + chord.root + i);
-    for (let i = 0; i < Math.min(inversion, pitches.length - 1); i++) {
-      let bass = pitches.shift(); while (bass <= pitches.at(-1)) bass += 12; pitches.push(bass);
+  function pianoVoicing(chord, inversion = 0, layout = 'closed') {
+    const offsets = [...new Set(chord.intervals.map(mod))].sort((a, b) => a - b);
+    const pitches = offsets.map(i => 48 + chord.root + i);
+    // Inversions follow the chord's formula: third, fifth, seventh, even when
+    // extensions are folded into the same octave for a closed voicing.
+    const bass = 48 + chord.root + mod(chord.intervals[Math.min(inversion, pitches.length - 1)]);
+    for (let i = 0; i < pitches.length; i++) if (pitches[i] < bass) pitches[i] += 12;
+    pitches.sort((a, b) => a - b);
+    // Preserve the selected bass/inversion while opening the inner voices by an octave.
+    if (layout === 'open') for (let i = 1; i < pitches.length; i += 2) {
+      if (pitches.length <= 4 && i > 1) break;
+      pitches[i] += 12;
     }
-    return pitches;
+    return pitches.sort((a, b) => a - b);
+  }
+  function cycle(rootPc, direction = 'fourths') {
+    const step = direction === 'fourths' ? 5 : 7;
+    const names = direction === 'fourths' ? ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'] : tonics.Maior;
+    return Array.from({ length: 12 }, (_, i) => { const pc = mod(rootPc + i * step); return { pc, name: names[pc] }; });
   }
   const INTERVALS = ['Uníssono', '2ª menor', '2ª maior', '3ª menor', '3ª maior', '4ª justa', 'Trítono', '5ª justa', '6ª menor', '6ª maior', '7ª menor', '7ª maior', 'Oitava'];
   function distance(n) { const steps = n / 2; return `${n} ${n === 1 ? 'semitom' : 'semitons'} · ${String(steps).replace('.', ',')} ${steps === 1 ? 'tom' : 'tons'}`; }
   function label(name, type = 'letters') { return (type === 'solfege' ? solfege[name[0]] + name.slice(1) : name).replaceAll('#', '♯').replaceAll('b', '♭'); }
-  const api = { mod, scale, chord, buildChord, requiredNotes, pianoVoicing, label, distance, INTERVALS, CHORD_TYPES, major, minor, tonics };
+  const api = { mod, scale, chord, buildChord, requiredNotes, pianoVoicing, cycle, label, distance, INTERVALS, CHORD_TYPES, major, minor, tonics };
   root.MusicTheory = api;
   if (typeof module !== 'undefined') module.exports = api;
 })(typeof window === 'undefined' ? globalThis : window);

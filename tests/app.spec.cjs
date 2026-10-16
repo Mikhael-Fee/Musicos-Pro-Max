@@ -182,7 +182,7 @@ test('automatic guided progression advances and can still be interrupted', async
 test('both instruments remain near chord selection on a desktop', async ({ page }) => {
   await page.setViewportSize({ width: 1366, height: 900 }); await page.selectOption('#instrument', 'both');
   await expect(page.locator('#guitar-panel')).toBeVisible(); await expect(page.locator('#piano-panel')).toBeVisible();
-  const a = await page.locator('#piano-panel').boundingBox(), b = await page.locator('.chord-diagram').boundingBox();
+  const a = await page.locator('#piano-render').boundingBox(), b = await page.locator('.chord-diagram').boundingBox();
   expect(Math.abs(a.y - b.y)).toBeLessThan(80);
   expect(a.y + a.height).toBeLessThan(900); expect(b.y + b.height).toBeLessThan(900);
 });

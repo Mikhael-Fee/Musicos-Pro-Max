@@ -6,9 +6,17 @@ Estúdio de prática musical em português para violão e teclado. Aplicação e
 
 - **Explorar:** campo harmônico, escala no instrumento ou acorde com extensões. Escolha, áudio e representação ficam na mesma área. O padrão é violão; há teclado e comparação dos dois lado a lado no computador.
 - **Exercícios:** encontre a nota, monte o acorde, intervalos de ouvido, graus e campo harmônico. As opções de resposta tocam e ficam marcadas antes de confirmar. O exercício de nota tem resposta imediata.
-- **Treino guiado:** o modelo aparece e toca imediatamente. Depois vêm quatro tempos para praticar. Por padrão a passagem ao próximo acorde é manual; avanço automático e repetições são opcionais.
+- **Treino guiado:** o modelo fica visível desde o início e soa junto com o tempo 1 do metrônomo. Há opção para tocar o acorde nos quatro tempos. Por padrão a passagem ao próximo acorde é manual; avanço automático e repetições são opcionais.
 
-A configuração principal tem somente tom, escala e instrumento. Volume, nomes das notas, inversão do teclado, modo de reprodução e narração ficam em “Ajustes”.
+- **Ciclos:** quartas justas e quintas justas em uma aba própria, com os 12 tons, audição da volta completa e treino de próximo tom.
+
+A configuração principal tem tom, escala e visualização. Inversão, posição aberta/fechada e volume do teclado ficam acima dele; posição e volume do violão ficam acima do violão. Volume geral, nomes das notas, modo de reprodução e som de acerto/erro ficam em “Ajustes”.
+
+Cada instrumento usa seu próprio voicing no som e na marcação, inclusive ao exibir os dois. “Ouvir teclado” e “Ouvir violão” permitem a audição isolada; volume zero silencia apenas aquele instrumento. Nos exercícios, “Ver” muda a visualização sem encerrar a sessão e “Som do modelo” escolhe a referência sonora independentemente. Em “Monte o acorde”, clicar no outro instrumento muda a montagem ativa, preservando as duas seleções; a confirmação avalia somente o instrumento indicado em “Montar no”.
+
+No teclado, a posição fechada agrupa os sons em até uma oitava; a aberta desloca vozes internas uma oitava acima, mantendo as notas e o baixo da inversão escolhida. Inversões seguem a fórmula do acorde (terça, quinta, sétima), inclusive quando 9, 11 e 13 estão reunidas na posição fechada. A terceira inversão só está disponível a partir de quatro notas. Omitir extensões para simplificar um acorde de teclado não faz parte desta opção.
+
+Notas com sustenidos ou bemóis têm destaque azul, respeitando a grafia da tonalidade, inclusive E♯ numa tecla branca. Os nomes e esse destaque ficam ocultos durante “Encontre a nota”. Depois da resposta, o resultado ganha painel colorido, símbolo e som opcional.
 
 ## Convenções de violão
 
@@ -34,7 +42,7 @@ São 19 tipos: maior, menor, diminuto, 7, 7M, m7, m7(b5), dim7, sus2, sus4, 6, m
 
 Nos intervalos, a primeira nota fica fixa na tonalidade escolhida. “Ouvir desafio” esconde a posição da segunda nota até a resposta; clicar numa opção toca um exemplo com a mesma referência e marca as duas notas. “Confirmar” registra um único resultado e permite comparar com a resposta correta. O violão usa uma referência numa região em que a oitava inteira cabe na posição inicial, evitando uma comparação escondida por rolagem lateral.
 
-Os exercícios têm dez questões. Acertos e totais da versão anterior são preservados. Preferências e totais ficam em `localStorage`, sem sincronização entre aparelhos. Sem armazenamento disponível, a prática continua em memória. Não há reconhecimento por microfone nem avaliação automática da execução física do instrumento.
+Os exercícios da aba Exercícios têm dez questões; os ciclos têm doze. Acertos e totais da versão anterior são preservados. Preferências e totais ficam em `localStorage`, sem sincronização entre aparelhos. Sem armazenamento disponível, a prática continua em memória. Não há reconhecimento por microfone nem avaliação automática da execução física do instrumento.
 
 ## Progressões gospel / worship
 
@@ -50,6 +58,14 @@ As progressões são usadas em gospel, worship e também em outros gêneros, sem
 | 1–4–1–5 | C – F – C – G |
 
 Também há 1–4–5–1, 2–5–1 e os sete graus. O treino transpõe os acordes para a escala escolhida e oferece tríades/sétimas, 1/2/4 voltas, BPM entre 40 e 160 e passagem manual/automática. No modo menor usa **menor natural**; o V não é alterado para maior como acontece na menor harmônica. Não implementa dominantes secundárias ou reharmonizações automaticamente.
+
+## Ciclos de quartas e quintas
+
+A aba **Ciclos** é independente das progressões de campo harmônico. Quartas avançam 5 semitons e quintas, 7. O tom da barra principal define o início, em qualquer uma das 12 tonalidades. A escolha Maior/Menor define a qualidade dos acordes de demonstração, não um campo diatônico comum a todo o ciclo.
+
+Em Dó, quartas: C → F → Bb → Eb → Ab → Db → Gb → B → E → A → D → G → C. Quintas percorrem o sentido inverso. Há equivalências enarmônicas para evitar grafias pouco usuais (por exemplo, B equivale a Cb na passagem Gb → B).
+
+“Ouvir ciclo completo” demonstra os 12 acordes e retorna ao inicial. É possível parar a execução ou escolher um tom da sequência. “Treinar próximo tom” oferece 12 questões com alternativas que soam antes da confirmação, feedback de acerto/erro e registro único de cada resposta. O mapa completo fica oculto durante o treino. A última questão verifica o retorno ao ponto de partida. O som pode ser violão, teclado ou os dois, respeitando os volumes individuais.
 
 ## Desenvolver e testar
 
@@ -74,7 +90,7 @@ Os testes de navegador usam o Chromium do sistema quando disponível ou o instal
 npx playwright install --with-deps chromium
 ```
 
-Os testes usam a porta 5174 e sempre iniciam seu próprio servidor sobre o build recém-gerado. Não reutilizam o servidor de desenvolvimento da porta 5173; assim, um servidor aberto não mascara um artefato desatualizado. A suíte verifica afinações e posições em todas as tonalidades/tipos, omissões, registros e teoria; também verifica som, respostas, persistência, progressões e a proximidade dos controles e instrumentos em computador e celular.
+Os testes usam a porta 5174 e sempre iniciam seu próprio servidor sobre o build recém-gerado. Não reutilizam o servidor de desenvolvimento da porta 5173; assim, um servidor aberto não mascara um artefato desatualizado. A suíte verifica afinações e posições em todas as tonalidades/tipos, omissões, registros e teoria; também renderiza o grafo de áudio em OfflineAudioContext para conferir volumes, altura e harmônicos, e verifica respostas, persistência, progressões, ciclos, sincronização dos tempos e a proximidade dos controles e instrumentos em computador e celular.
 
 ## Organização e publicação
 
@@ -87,6 +103,6 @@ Os testes usam a porta 5174 e sempre iniciam seu próprio servidor sobre o build
 | `assets/audio.js` | Timbres sintetizados, volume, compressor e metrônomo |
 | `scripts/build.cjs` | Build estático em `dist/` |
 
-O teclado usa síntese aditiva e o violão síntese de corda dedilhada Karplus–Strong. São timbres sintetizados, não gravações acústicas. O áudio só é ativado após interação do usuário, conforme a política do navegador. A narração opcional usa a voz do sistema. O volume de notas e metrônomo é comum; a voz tem controle do sistema. O áudio e o treino guiado param ao ocultar a página.
+O teclado usa síntese aditiva com ataque e harmônicos mais presentes; o violão usa síntese de corda dedilhada Karplus–Strong. São timbres sintetizados, não gravações acústicas. O áudio só é ativado após interação do usuário, conforme a política do navegador. Há canais independentes para teclado, violão, feedback e metrônomo, além do volume geral e compressor. Novos ataques preservam as notas que já estão soando; somente eventos futuros da audição anterior são cancelados. Interromper, encerrar e ocultar a página aplicam uma saída curta e cancelam agendamentos. O treino guiado agenda acordes em bloco e cliques no mesmo relógio Web Audio; não usa narração antes do compasso. O modo dedilhado continua disponível para explorar acordes.
 
 O projeto Netlify existente publica `dist/` com `npm run build`. Envie para `main` somente após os testes; confirme o conteúdo no mesmo endereço. Consulte [DEPLOY.md](docs/DEPLOY.md) e [CHANGELOG.md](CHANGELOG.md). O GitHub Actions valida o projeto independentemente do Netlify; o deploy não espera o Actions por padrão.

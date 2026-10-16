@@ -91,3 +91,31 @@ test('guitar cache preserves the contextual spelling of omitted extensions', () 
     assert.deepEqual(v.omitted.map(n => n.name), c.notes.filter(n => !v.pitches.some(p => p % 12 === n.pc)).map(n => n.name));
   }
 });
+
+test('piano layouts preserve every tone and inversion while opening the spacing', () => {
+  for (let root = 0; root < 12; root++) for (const type of Object.keys(T.CHORD_TYPES)) {
+    const chord = T.buildChord(root, type);
+    for (let inversion = 0; inversion < Math.min(4, chord.notes.length); inversion++) {
+      const closed = T.pianoVoicing(chord, inversion), open = T.pianoVoicing(chord, inversion, 'open');
+      const pcs = notes => [...new Set(notes.map(n => n % 12))].sort((a, b) => a - b);
+      assert.deepEqual(pcs(closed), pcs(chord.notes.map(n => n.pc)));
+      assert.deepEqual(pcs(open), pcs(closed));
+      assert.equal(open[0], closed[0]);
+      assert.equal(closed[0] % 12, T.mod(root + chord.intervals[inversion]));
+      assert.ok(closed.at(-1) - closed[0] < 12);
+      assert.ok(open.at(-1) - open[0] > closed.at(-1) - closed[0]);
+    }
+  }
+  assert.deepEqual(T.pianoVoicing(T.buildChord(0, 'major'), 1, 'open'), [52, 60, 67]);
+});
+
+test('fourth and fifth cycles visit all twelve keys, transpose and return to their start', () => {
+  assert.deepEqual(T.cycle(0).map(n => n.name), ['C', 'F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb', 'B', 'E', 'A', 'D', 'G']);
+  assert.deepEqual(T.cycle(0, 'fifths').map(n => n.pc), [0, 7, 2, 9, 4, 11, 6, 1, 8, 3, 10, 5]);
+  for (let root = 0; root < 12; root++) for (const [direction, step] of [['fourths', 5], ['fifths', 7]]) {
+    const notes = T.cycle(root, direction);
+    assert.equal(new Set(notes.map(n => n.pc)).size, 12);
+    assert.equal(notes[0].pc, root);
+    notes.forEach((n, i) => assert.equal(T.mod(notes[(i + 1) % 12].pc - n.pc), step));
+  }
+});
