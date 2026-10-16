@@ -53,7 +53,8 @@ test('note location checks the instrument answer and persists progress', async (
   await expect(page.locator('body')).toHaveClass(/locating/);
   const note = (await page.locator('#question').innerText()).match(/\(([^)]+)\)/)[1];
   const pitch = await page.evaluate(n => MusicTheory.scale(CONSTANTES.NOTAS.indexOf(document.getElementById('tomFixo').value), document.getElementById('escalaFixa').value).find(x => x.name === n).pc, note);
-  await page.click('#key-' + pitch, { position: { x: 8, y: 130 } });
+  await page.locator('#key-' + pitch).focus();
+  await page.keyboard.press('Enter');
   await expect(page.locator('#feedback')).toContainText('Acertou!');
   await expect(page.locator('body')).not.toHaveClass(/locating/);
   await page.click('#end-exercise');
