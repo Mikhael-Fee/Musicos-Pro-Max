@@ -16,10 +16,15 @@
   }
   function classes(scene, pc, midi, string, fret, active) {
     const rootPc = scene.chord?.root ?? scene.scale?.[0].pc;
-    return `${!scene.hideLabels && /[#b]/.test(noteName(pc, scene)) ? 'altered' : ''} ${active ? (pc === rootPc ? 'root' : 'active') : ''} ${chosen(scene, midi, string, fret) ? 'chosen' : ''}`;
+    const voice = scene.voicings?.[string === undefined ? 'piano' : 'guitar'];
+    const index = voice?.pitches.indexOf(midi);
+    const inVoicing = index >= 0 && (string === undefined || voice.frets[string] === fret);
+    const motion = inVoicing && voice.previous ? voice.previous[index] === midi ? 'voice-held' : 'voice-moved' : '';
+    const extension = !scene.hideLabels && T.isColorTone(scene.chord?.notes.find(n => n.pc === pc));
+    return `${motion} ${extension ? 'extension' : ''} ${!scene.hideLabels && /[#b]/.test(noteName(pc, scene)) ? 'altered' : ''} ${active ? (pc === rootPc ? 'root' : 'active') : ''} ${chosen(scene, midi, string, fret) ? 'chosen' : ''}`;
   }
   function renderPiano(scene, options) {
-    const pitches = scene.kind === 'chord' ? T.pianoVoicing(scene.chord, options.inversion, options.pianoLayout) : scene.pitchesByInstrument?.piano || [];
+    const pitches = scene.voicings?.piano.pitches || (scene.kind === 'chord' ? T.pianoVoicing(scene.chord, options.inversion, options.pianoLayout) : scene.pitchesByInstrument?.piano || []);
     const selected = scene.selected?.filter(n => sourceOf(n) === 'piano').map(n => n.midi) || [];
     const lo = Math.min(48, ...pitches, ...selected), hi = Math.max(71, ...pitches, ...selected);
     const start = Math.floor(lo / 12) * 12, end = Math.floor(hi / 12) * 12 + 11;
@@ -31,15 +36,18 @@
       const text = scene.hideLabels ? '' : label(pc, scene, options.labels);
       const accessible = scene.hideLabels ? `Tecla ${midi - start + 1}` : `${T.label(noteName(pc, scene), 'solfege')}, oitava ${Math.floor(midi / 12) - 1}`;
       const style = black ? `width:${64 / whiteCount}%;left:${(whiteIndex - .32) * 100 / whiteCount}%` : `width:${100 / whiteCount}%`;
-      html += `<button type="button" id="piano-key-${midi}" class="${black ? 'black' : 'white'} ${classes(scene, pc, midi, undefined, undefined, active)}" style="${style}" data-midi="${midi}" aria-label="${escape(accessible)}" aria-pressed="${!!chosen(scene, midi)}"><span>${escape(text)}</span></button>`;
+      const note = scene.chord?.notes.find(n => n.pc === pc);
+      const badge = active && !scene.hideLabels && T.isColorTone(note) ? `<small class="tone-badge">${escape(note.role)}</small>` : '';
+      html += `<button type="button" id="piano-key-${midi}" class="${black ? 'black' : 'white'} ${classes(scene, pc, midi, undefined, undefined, active)}" style="${style}" data-midi="${midi}" aria-label="${escape(accessible)}" aria-pressed="${!!chosen(scene, midi)}"><span>${escape(text)}</span>${badge}</button>`;
       if (!black) whiteIndex++;
     }
     $('piano-render').style.setProperty('--piano-min', `${Math.max(320, whiteCount * 24)}px`);
     $('piano-render').innerHTML = html;
     $('piano-register').textContent = `C${start / 12 - 1}–B${Math.floor(end / 12) - 1}${scene.kind === 'chord' ? ' · baixo: ' + label(pitches[0] % 12, scene, 'letters') + (Math.floor(pitches[0] / 12) - 1) : ' · toque para ouvir'}`;
+    return pitches;
   }
   function renderDiagram(scene, options) {
-    const v = G.voicing(scene.chord, options.guitarView === 'compact');
+    const v = scene.voicings?.guitar || G.voicing(scene.chord, options.guitarView === 'compact');
     if (!v) {
       $('guitar-render').innerHTML = '<p class="no-shape">Sem posição confortável de até quatro casas para esta combinação. Use o mapa completo para explorar as notas.</p>';
       $('guitar-description').textContent = 'Nenhuma digitação incompleta é apresentada como acorde completo.'; return;
@@ -67,6 +75,31 @@
     const omitted = v.omitted.length ? `Omitidas nesta posição: ${v.omitted.map(n => `${n.role} (${n.name})`).join(', ')}. A fórmula completa está acima.` : 'Todas as notas da fórmula estão nesta posição.';
     $('guitar-render').innerHTML = `<div class="diagram-layout">${svg}<div class="voicing-info"><strong>${escape(v.source)}</strong><p>6ª → 1ª corda</p><div class="string-recipe">${v.frets.map(f => `<span>${f === null ? '×' : f}</span>`).join('')}</div><p>○ solta · × não tocar<br>Os números à esquerda são as casas.</p>${v.fingers ? `<p class="fingers">Dedos: ${v.fingers.map(f => f === null ? '×' : f === 0 ? '○' : f).join(' · ')}<br>1 indicador · 2 médio<br>3 anelar · 4 mínimo</p>` : '<p>Toque nos pontos para ouvir.</p>'}</div></div>`;
     $('guitar-description').textContent = omitted;
+  }
+  function renderMotion(scene, instrument) {
+    const container = $(instrument + '-motion'), voice = scene.voicings?.[instrument];
+    container.hidden = !voice; container.replaceChildren();
+    if (!voice) return;
+    const name = (midi, chord = scene.chord) => T.label(chord.notes.find(n => n.pc === T.mod(midi)).name) + (Math.floor(midi / 12) - 1);
+    const inversion = scene.chord.notes.findIndex(n => n.pc === T.mod(voice.pitches[0]));
+    const heading = document.createElement('strong');
+    heading.textContent = `${T.label(T.voicingName(scene.chord, voice.pitches))} · ${inversion ? inversion + 'ª inversão' : 'fundamental'}`;
+    container.append(heading);
+    if (!voice.previous) {
+      container.append(document.createTextNode(instrument === 'guitar' ? 'Posição inicial · tríade em três cordas vizinhas.' : 'Posição inicial · ' + voice.pitches.map(p => name(p)).join(' · ')));
+      return;
+    }
+    const kept = voice.pitches.filter((p, i) => p === voice.previous[i]);
+    const stay = document.createElement('span'); stay.className = 'kept';
+    stay.textContent = kept.length ? '● Mantenha ' + kept.map(p => name(p)).join(', ') + '. ' : 'Todas as vozes mudam. ';
+    const move = document.createElement('span'); move.className = 'moved';
+    if (instrument === 'guitar') {
+      move.textContent = 'Mova: ' + voice.frets.flatMap((f, s) => f === null || f === voice.previousFrets[s] ? [] : [`${6 - s}ª corda: ${voice.previousFrets[s]} → ${f}`]).join(' · ') + ' (casas).';
+    } else {
+      move.textContent = 'Mova: ' + voice.pitches.flatMap((p, i) => p === voice.previous[i] ? [] : [`${name(voice.previous[i], scene.voicings.previousChord)} → ${name(p)} (${p > voice.previous[i] ? '+' : '−'}${Math.abs(p - voice.previous[i])})`]).join(' · ') + ' semitons.';
+    }
+    if (!voice.pitches.some((p, i) => p !== voice.previous[i])) move.textContent = 'Mesma posição.';
+    container.append(stay, move);
   }
   function renderFretboard(scene, options) {
     const position = Number(options.position), all = options.guitarView === 'all';
@@ -96,14 +129,26 @@
     $('instrument-pair').classList.toggle('both', options.instrument === 'both');
     $('guitar-panel').hidden = options.instrument === 'piano';
     $('piano-panel').hidden = options.instrument === 'guitar';
-    $('guitar-view-label').hidden = options.instrument === 'piano' || scene.hideLabels;
-    $('position-label').hidden = options.instrument === 'piano' || (scene.kind === 'chord' && !scene.forceBoard && options.guitarView !== 'all');
+    $('guitar-view-label').hidden = !!scene.voicings || options.instrument === 'piano' || scene.hideLabels;
+    $('position-label').hidden = !!scene.voicings || options.instrument === 'piano' || (scene.kind === 'chord' && !scene.forceBoard && options.guitarView !== 'all');
+    $('inversion').closest('label').hidden = !!scene.voicings;
     if (scene.kind === 'chord' && !scene.forceBoard && options.guitarView !== 'all') renderDiagram(scene, options);
     else renderFretboard(scene, options);
-    renderPiano(scene, options);
+    const pianoPitches = renderPiano(scene, options);
+    renderMotion(scene, 'guitar'); renderMotion(scene, 'piano');
     $('play-guitar').disabled = $('play-scene').disabled; $('play-piano').disabled = $('play-scene').disabled;
     if (document.querySelector('.guitar-scroll')) document.querySelector('.guitar-scroll').scrollLeft = scroll;
     document.querySelector('.piano-scroll').scrollLeft = pianoScroll;
+    const pianoViewport = document.querySelector('.piano-scroll'), signature = pianoPitches.join(',');
+    if (!pianoPitches.length) pianoViewport.dataset.voicing = '';
+    else if (pianoViewport.clientWidth && pianoViewport.dataset.voicing !== signature) {
+      const keys = pianoPitches.map(p => $('piano-key-' + p));
+      const left = Math.min(...keys.map(k => k.offsetLeft)), right = Math.max(...keys.map(k => k.offsetLeft + k.offsetWidth));
+      if (left < pianoViewport.scrollLeft || right > pianoViewport.scrollLeft + pianoViewport.clientWidth) {
+        pianoViewport.scrollLeft = Math.max(0, (left + right - pianoViewport.clientWidth) / 2);
+      }
+      pianoViewport.dataset.voicing = signature;
+    }
     if (focusedId && /^(piano-key-|guitar-|chord-string-)/.test(focusedId)) $(focusedId)?.focus({ preventScroll: true });
   }
   root.InstrumentUI = { render, label };

@@ -1,5 +1,16 @@
 # Histórico
 
+## 2.2.0 — 16/10/2026
+
+- Ciclos corrigidos para condução de vozes: preservam notas em comum e escolhem as inversões mais próximas, em vez de repetir posições fundamentais.
+- Teclado demonstra C → F/C e C → G/B com as notas no mesmo registro, posições abertas/fechadas e indicação automática do baixo/inversão.
+- Violão usa tríades em três cordas vizinhas, até a casa 19; a volta em quintas começa uma oitava acima para manter espaço para a descida.
+- Indicação junto aos instrumentos das notas mantidas e dos movimentos em semitons/casas. Som e desenho usam a mesma posição calculada.
+- Alternativas dos exercícios partem sempre da posição da questão; a sequência continua pela posição correta confirmada.
+- Preenchimento forte azul para alterações e rosa para sextas, sétimas e extensões, com legenda e etiquetas de graus no teclado. Seleção preservada com indicação laranja/branca.
+- Avisos de acerto/erro refeitos com motivos originais de quatro notas, ascendentes/descendentes, ataque mais presente e volume próprio de 85% por padrão. Prévia dos dois sons em Ajustes.
+- Testes cobrem todas as tonalidades maiores/menores nos dois ciclos e layouts, conservação de uma voz, deslocamentos de até dois semitons, posições tocáveis, continuidade dos exercícios e áudio renderizado dos avisos.
+
 ## 2.1.0 — 16/10/2026
 
 - Aba Ciclos para quartas e quintas: 12 tons transponíveis, audição completa com retorno à tônica e treino de próximo tom com 12 questões, feedback e progresso.

@@ -197,3 +197,110 @@ test('mobile cycle exercise keeps the question, view switch and piano together',
   await page.selectOption('#cycle-view', 'both'); await expect(page.locator('#guitar-panel')).toBeVisible();
   await page.click('#end-cycle-exercise'); await expect(page.locator('#instrument')).toBeVisible(); await expect(page.locator('#instrument')).toHaveValue('both');
 });
+
+test('cycle C to F uses the nearest inversion in sound and both diagrams, then restores manual controls', async ({ page }) => {
+  await page.selectOption('#instrument', 'both'); await page.selectOption('#guitar-view', 'all');
+  await page.click('[data-mode="cycles"]'); await page.selectOption('#cycle-reference', 'both'); await spyNotes(page);
+  await page.click('[data-cycle-step="1"]');
+  const played = await page.evaluate(() => window.played);
+  for (const instrument of ['piano', 'guitar']) expect(played.filter(n => n.instrument === instrument).map(n => n.midi)).toEqual([48, 53, 57]);
+  expect(await page.locator('#piano-render .active,#piano-render .root').evaluateAll(els => els.map(el => Number(el.dataset.midi)))).toEqual([48, 53, 57]);
+  await expect(page.locator('#piano-key-48')).toHaveClass(/voice-held/);
+  await expect(page.locator('#piano-render .voice-moved')).toHaveCount(2);
+  await expect(page.locator('#piano-motion')).toContainText('F/C · 2ª inversão');
+  await expect(page.locator('#piano-motion')).toContainText('Mantenha C3');
+  await expect(page.locator('.string-recipe')).toHaveText('×332××');
+  await expect(page.locator('#guitar-motion')).toContainText('4ª corda: 2 → 3');
+  await expect(page.locator('#inversion')).toBeHidden();
+  await clearPlayed(page); await page.click('#note-palette [data-pc="0"]');
+  expect(await page.evaluate(() => window.played.map(n => n.midi))).toEqual([48, 48]);
+  await page.click('[data-mode="explore"]'); await expect(page.locator('#inversion')).toBeVisible();
+  await expect(page.locator('#guitar-view')).toHaveValue('all'); await expect(page.locator('#piano-motion')).toBeHidden();
+});
+
+test('cycle answer previews always lead from the question chord and continue from the confirmed position', async ({ page }) => {
+  await page.selectOption('#instrument', 'piano'); await page.click('[data-mode="cycles"]'); await page.selectOption('#cycle-reference', 'piano');
+  await page.click('#start-cycle-exercise'); await page.locator('#cycle-answers button:not([data-pc="5"])').first().click();
+  await page.click('#cycle-answers [data-pc="5"]');
+  expect(await page.locator('#piano-render .active,#piano-render .root').evaluateAll(els => els.map(el => Number(el.dataset.midi)))).toEqual([48, 53, 57]);
+  await page.click('#confirm-cycle'); await page.click('#next-cycle-question'); await page.click('#cycle-answers [data-pc="10"]');
+  expect(await page.locator('#piano-render .active,#piano-render .root').evaluateAll(els => els.map(el => Number(el.dataset.midi)))).toEqual([50, 53, 58]);
+  await expect(page.locator('#piano-motion')).toContainText('B♭/D · 1ª inversão');
+  await page.selectOption('#piano-layout', 'open');
+  const before = await page.locator('#piano-render .active,#piano-render .root').evaluateAll(els => els.map(el => Number(el.dataset.midi)));
+  expect(before.at(-1) - before[0]).toBeGreaterThan(12);
+  await page.click('#confirm-cycle');
+  expect(await page.locator('#piano-render .active,#piano-render .root').evaluateAll(els => els.map(el => Number(el.dataset.midi)))).toEqual(before);
+});
+
+test('cycle fifths retains G in C to G/B and playback preserves minimal movement through the return', async ({ page }) => {
+  await page.selectOption('#instrument', 'piano'); await page.click('[data-mode="cycles"]'); await page.selectOption('#cycle-direction', 'fifths'); await page.selectOption('#cycle-reference', 'piano');
+  await page.click('[data-cycle-step="1"]');
+  expect(await page.locator('#piano-render .active,#piano-render .root').evaluateAll(els => els.map(el => Number(el.dataset.midi)))).toEqual([47, 50, 55]);
+  await expect(page.locator('#piano-key-55')).toHaveClass(/voice-held/); await expect(page.locator('#piano-motion')).toContainText('G/B · 1ª inversão');
+  await spyNotes(page); await page.clock.install(); await page.click('#play-cycle'); await page.clock.runFor(12 * 950);
+  const chords = await page.evaluate(() => { const groups = []; for (let i = 0; i < played.length; i += 3) groups.push(played.slice(i, i + 3).map(n => n.midi)); return groups; });
+  expect(chords).toHaveLength(13);
+  for (let i = 1; i < chords.length; i++) expect(T.motionScore(chords[i - 1], chords[i])).toEqual([2, 3, 2]);
+  await expect(page.locator('#cycle-playback-status')).toHaveText('Retorno a C. Ciclo completo.');
+});
+
+test('result sounds have four distinct rising/falling notes, more presence and their own volume control', async ({ page }) => {
+  const result = await page.evaluate(async () => {
+    const render = async (correct, volume) => {
+      const ctx = new OfflineAudioContext(1, 44100, 44100), engine = new soundEngine.constructor(ctx);
+      engine.setVolume(volume, 'feedback'); const duration = engine.feedback(correct);
+      const groups = new Map();
+      for (const [source, v] of engine.voiceChannels) if (!groups.has(v.group)) groups.set(v.group, source.frequency.value);
+      const data = (await ctx.startRendering()).getChannelData(0);
+      return { notes: [...groups.values()], duration, rms: Math.sqrt(data.reduce((s, v) => s + v * v, 0) / data.length), peak: data.reduce((s, v) => Math.max(s, Math.abs(v)), 0), tail: Math.max(...data.slice(35000)) };
+    };
+    return { right: await render(true, .85), wrong: await render(false, .85), quiet: await render(true, .2), muted: await render(true, 0) };
+  });
+  expect(result.right.notes).toHaveLength(4); expect(result.wrong.notes).toHaveLength(4);
+  expect(result.right.notes.every((n, i, notes) => !i || n > notes[i - 1])).toBe(true);
+  expect(result.wrong.notes.every((n, i, notes) => !i || n < notes[i - 1])).toBe(true);
+  expect(result.right.rms).toBeGreaterThan(.025); expect(result.wrong.rms).toBeGreaterThan(.025);
+  expect(result.right.rms).toBeGreaterThan(result.quiet.rms * 2); expect(result.muted.rms).toBe(0);
+  expect(result.right.peak).toBeLessThan(1); expect(result.wrong.peak).toBeLessThan(1); expect(result.right.tail).toBe(0);
+  await page.click('#settings summary'); await expect(page.locator('#feedback-volume')).toHaveValue('85');
+  await page.click('#preview-success'); expect(await page.evaluate(() => [...soundEngine.voiceChannels.values()].filter(v => v.channel === 'feedback').length)).toBeGreaterThanOrEqual(9);
+  await page.locator('#feedback-volume').evaluate(el => { el.value = '100'; el.dispatchEvent(new Event('input')); });
+  await page.click('#preview-error'); await expect(page.locator('#feedback-volume-value')).toHaveText('100%');
+  await page.reload(); expect(await page.evaluate(() => soundEngine.levels.feedback)).toBe(1);
+});
+
+test('alterations and extensions have solid, distinct fills on note choices, piano keys and guitar dots', async ({ page }) => {
+  await page.selectOption('#instrument', 'both'); await page.selectOption('#explore-topic', 'chord'); await page.selectOption('#chord-type', '13');
+  const palette = page.locator('#note-palette [data-pc="10"]');
+  await expect(palette).toHaveClass(/extension/); await expect(palette).toHaveClass(/altered/);
+  const pink = await palette.evaluate(el => getComputedStyle(el).backgroundColor);
+  const rootColor = await page.locator('#piano-key-48').evaluate(el => getComputedStyle(el).backgroundColor);
+  expect(pink).toBe('rgb(247, 162, 222)'); expect(rootColor).not.toBe(pink);
+  for (const midi of [50, 53, 57, 58]) {
+    expect(await page.locator('#piano-key-' + midi).evaluate(el => getComputedStyle(el).backgroundColor)).toBe(pink);
+    await expect(page.locator('#piano-key-' + midi + ' .tone-badge')).toBeVisible();
+  }
+  const guitarPink = await page.locator('.chord-diagram .extension .note-circle').evaluateAll(els => els.map(el => getComputedStyle(el).fill));
+  expect(guitarPink.length).toBeGreaterThan(0); expect(guitarPink.every(color => color === pink)).toBe(true);
+  await page.click('#piano-key-58');
+  expect(await page.locator('#piano-key-58').evaluate(el => getComputedStyle(el).backgroundColor)).toBe(pink);
+  expect(await page.locator('#piano-key-58').evaluate(el => getComputedStyle(el).boxShadow)).toContain('rgb(255, 209, 140)');
+  await page.selectOption('#key', '2'); await page.selectOption('#chord-type', 'major');
+  expect(await page.locator('#piano-key-54').evaluate(el => getComputedStyle(el).backgroundColor)).toBe('rgb(104, 206, 255)');
+  const guitarBlue = await page.locator('.chord-diagram .altered .note-circle').evaluateAll(els => els.map(el => getComputedStyle(el).fill));
+  expect(guitarBlue.every(color => color === 'rgb(104, 206, 255)')).toBe(true); expect(guitarBlue.length).toBeGreaterThan(0);
+  await page.setViewportSize({width:360,height:844});
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test('mobile open cycle voicing scrolls the keyboard to keep all three voices visible', async ({ page }) => {
+  await page.setViewportSize({width:390,height:844}); await page.selectOption('#instrument', 'piano');
+  await page.click('[data-mode="cycles"]'); await page.selectOption('#cycle-direction', 'fifths'); await page.selectOption('#piano-layout', 'open');
+  await page.click('[data-cycle-step="1"]'); await expect(page.locator('#piano-motion')).toContainText('G/B');
+  const visible = await page.locator('.piano-scroll').evaluate(el => {
+    const frame = el.getBoundingClientRect();
+    return [...el.querySelectorAll('.active,.root')].every(key => { const r = key.getBoundingClientRect(); return r.left >= frame.left - 1 && r.right <= frame.right + 1; });
+  });
+  expect(visible).toBe(true);
+});

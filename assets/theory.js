@@ -75,10 +75,31 @@
     const names = direction === 'fourths' ? ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'] : tonics.Maior;
     return Array.from({ length: 12 }, (_, i) => { const pc = mod(rootPc + i * step); return { pc, name: names[pc] }; });
   }
+  function motionScore(previous, next) {
+    const moves = next.map((pitch, i) => Math.abs(pitch - previous[i]));
+    return [moves.filter(Boolean).length, moves.reduce((a, b) => a + b, 0), Math.max(...moves)];
+  }
+  function compareMotion(a, b) { return a.reduce((result, value, i) => result || value - b[i], 0); }
+  function leadPiano(chord, previous, layout = 'closed', inversion = 0) {
+    if (!previous) return pianoVoicing(chord, inversion, layout);
+    let best, score;
+    for (let inv = 0; inv < chord.notes.length; inv++) for (let octave = -3; octave <= 3; octave++) {
+      const pitches = pianoVoicing(chord, inv, layout).map(p => p + octave * 12);
+      if (pitches[0] < 21 || pitches.at(-1) > 108) continue;
+      const candidate = motionScore(previous, pitches);
+      if (!best || compareMotion(candidate, score) < 0) { best = pitches; score = candidate; }
+    }
+    return best;
+  }
+  function voicingName(chord, pitches) {
+    const bass = chord.notes.find(n => n.pc === mod(pitches[0]));
+    return chord.name + (bass.pc === chord.root ? '' : '/' + bass.name);
+  }
+  function isColorTone(note) { return !!note?.role && [6, 7, 9, 11, 13].includes(Number(note.role.replaceAll('b', '').replaceAll('#', ''))); }
   const INTERVALS = ['Uníssono', '2ª menor', '2ª maior', '3ª menor', '3ª maior', '4ª justa', 'Trítono', '5ª justa', '6ª menor', '6ª maior', '7ª menor', '7ª maior', 'Oitava'];
   function distance(n) { const steps = n / 2; return `${n} ${n === 1 ? 'semitom' : 'semitons'} · ${String(steps).replace('.', ',')} ${steps === 1 ? 'tom' : 'tons'}`; }
   function label(name, type = 'letters') { return (type === 'solfege' ? solfege[name[0]] + name.slice(1) : name).replaceAll('#', '♯').replaceAll('b', '♭'); }
-  const api = { mod, scale, chord, buildChord, requiredNotes, pianoVoicing, cycle, label, distance, INTERVALS, CHORD_TYPES, major, minor, tonics };
+  const api = { mod, scale, chord, buildChord, requiredNotes, pianoVoicing, cycle, motionScore, compareMotion, leadPiano, voicingName, isColorTone, label, distance, INTERVALS, CHORD_TYPES, major, minor, tonics };
   root.MusicTheory = api;
   if (typeof module !== 'undefined') module.exports = api;
 })(typeof window === 'undefined' ? globalThis : window);

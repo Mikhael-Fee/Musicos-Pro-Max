@@ -3,8 +3,8 @@
   const $ = id => document.getElementById(id), T = MusicTheory, G = GuitarTheory;
   const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
   const settingsKey = 'musicospromax.settings.v2', statsKey = 'musicospromax.stats.v1';
-  const settingIds = ['key', 'scale', 'instrument', 'explore-topic', 'field-format', 'chord-type', 'note-labels', 'play-style', 'inversion', 'piano-layout', 'guitar-view', 'scale-position', 'volume', 'guitar-volume', 'piano-volume', 'reference-instrument', 'feedback-sound', 'cycle-direction', 'cycle-reference'];
-  let mode = 'explore', degree = 1, scene, session = null, guided = null, cycleSession = null, cyclePlayback = 0;
+  const settingIds = ['key', 'scale', 'instrument', 'explore-topic', 'field-format', 'chord-type', 'note-labels', 'play-style', 'inversion', 'piano-layout', 'guitar-view', 'scale-position', 'volume', 'guitar-volume', 'piano-volume', 'reference-instrument', 'feedback-sound', 'feedback-volume', 'cycle-direction', 'cycle-reference'];
+  let mode = 'explore', degree = 1, scene, session = null, guided = null, cycleSession = null, cyclePlayback = 0, cycleCurrent = null;
   let playback = 0, audioTimers = [], feedbackUntil = 0;
   let stats = { attempts: 0, correct: 0, sessions: 0 };
   function read(key) { try { return JSON.parse(localStorage.getItem(key)); } catch (_) { return null; } }
@@ -12,7 +12,7 @@
   function key() { return Number($('key').value); }
   function scale() { return T.scale(key(), $('scale').value); }
   function field(seventh = $('field-format').value === 'seventh') { return Array.from({ length: 7 }, (_, i) => T.chord(key(), $('scale').value, i + 1, seventh)); }
-  function options() { return { labels: $('note-labels').value, instrument: $('instrument').value, guitarView: $('guitar-view').value, position: position(), inversion: Number($('inversion').value), pianoLayout: $('piano-layout').value }; }
+  function options() { return { labels: $('note-labels').value, instrument: $('instrument').value, guitarView: scene?.voicings ? 'standard' : $('guitar-view').value, position: position(), inversion: Number($('inversion').value), pianoLayout: $('piano-layout').value }; }
   function position() { const value = $('scale-position').value; return value === 'root6' ? T.mod(key() - 4) : value === 'root5' ? T.mod(key() - 9) : 0; }
   function visibleInstruments() { return $('instrument').value === 'both' ? ['guitar', 'piano'] : [$('instrument').value]; }
   function auditionInstruments() {
@@ -70,16 +70,17 @@
     playArrangement([{ instrument, notes }], spacing, keepSelection);
   }
   function chordPitches(chord, instrument = effectiveInstrument()) {
+    const automatic = scene?.chord?.root === chord.root && scene.chord.type === chord.type ? scene.voicings?.[instrument] : null;
     if (instrument === 'guitar') {
-      const v = G.voicing(chord, $('guitar-view').value === 'compact');
+      const v = automatic || G.voicing(chord, $('guitar-view').value === 'compact');
       if (v) return v.frets.flatMap((fret, string) => fret === null ? [] : [{ midi: G.TUNING[string] + fret, string, fret }]);
     }
-    return T.pianoVoicing(chord, Number($('inversion').value), $('piano-layout').value).map(midi => ({ midi }));
+    return (automatic?.pitches || T.pianoVoicing(chord, Number($('inversion').value), $('piano-layout').value)).map(midi => ({ midi }));
   }
   function playChord(chord, instruments = auditionInstruments()) { playArrangement(instruments.map(instrument => ({ instrument, notes: chordPitches(chord, instrument) })), $('play-style').value === 'block' ? 0 : .1, false); }
   function noteLocation(pc, instrument = effectiveInstrument()) {
     if (instrument === 'guitar') {
-      if (scene.kind === 'chord' && !scene.forceBoard && $('guitar-view').value !== 'all') {
+      if (scene.kind === 'chord' && !scene.forceBoard && (scene.voicings || $('guitar-view').value !== 'all')) {
         const match = chordPitches(scene.chord, 'guitar').find(n => T.mod(n.midi) === pc);
         if (match) return match;
         scene.forceBoard = true;
@@ -87,7 +88,7 @@
       const start = position(), end = start + 4;
       for (let string = 5; string >= 0; string--) for (let fret = start; fret <= end; fret++) if (T.mod(G.TUNING[string] + fret) === pc) return { midi: G.TUNING[string] + fret, string, fret };
     }
-    return { midi: scene.kind === 'chord' ? T.pianoVoicing(scene.chord, Number($('inversion').value), $('piano-layout').value).find(midi => midi % 12 === pc) ?? 48 + pc : 48 + pc };
+    return { midi: scene.kind === 'chord' ? chordPitches(scene.chord, 'piano').find(n => n.midi % 12 === pc)?.midi ?? 48 + pc : 48 + pc };
   }
   function showSingle(n) {
     const instrument = sourceOf(n); scene.selected = [{ ...n, instrument }]; draw();
@@ -105,6 +106,7 @@
       const text = document.createElement('b'); text.textContent = T.label(n.name, $('note-labels').value === 'solfege' ? 'solfege' : 'letters');
       const role = document.createElement('small'); role.textContent = n.role || n.degree;
       b.classList.toggle('altered', /[#b]/.test(n.name));
+      b.classList.toggle('extension', T.isColorTone(n));
       b.append(text, role); b.dataset.pc = n.pc; b.setAttribute('aria-label', `Ouvir ${T.label(n.name, 'solfege')}`); b.setAttribute('aria-pressed', 'false');
       $('note-palette').append(b);
     }
@@ -113,9 +115,9 @@
     $('inversion').options[3].disabled = chord.notes.length < 4;
     if (chord.notes.length < 4 && $('inversion').value === '3') $('inversion').value = '0';
   }
-  function showChord(chord, category, title = chord.name, description = '') {
+  function showChord(chord, category, title = chord.name, description = '', voicings = null) {
     configurePiano(chord);
-    scene = { kind: 'chord', chord, scale: scale(), selected: [] };
+    scene = { kind: 'chord', chord, scale: scale(), selected: [], voicings };
     $('scene-category').textContent = category; $('scene-title').textContent = title;
     $('scene-description').textContent = description || `${T.CHORD_TYPES[chord.type].title} · Fórmula: ${chord.roles.join(' · ')}. Ouça o acorde ou toque em cada nota.`;
     notePalette(chord.notes); $('play-scene').textContent = 'Ouvir acorde'; $('play-scene').disabled = false; draw();
@@ -278,7 +280,7 @@
     const heading = document.createElement('strong'); heading.textContent = correct ? '✓ Acertou!' : '✕ Vamos revisar.';
     const detail = document.createElement('p'); detail.textContent = explanation;
     container.replaceChildren(heading, detail);
-    if ($('feedback-sound').checked) { try { soundEngine.feedback(correct); feedbackUntil = Date.now() + 330; } catch (_) {} }
+    if ($('feedback-sound').checked) { try { feedbackUntil = Date.now() + soundEngine.feedback(correct) * 1000 + 40; } catch (_) {} }
   }
   function grade(correct, explanation) {
     if (!session || session.answered) return;
@@ -440,21 +442,34 @@
   }
   function cycleNotes() { return T.cycle(key(), $('cycle-direction').value); }
   function cycleChord(note) { return T.buildChord(note.pc, $('scale').value === 'Maior' ? 'major' : 'minor', note.name); }
-  function showCyclePreview(index = 0) {
+  function cycleVoicings(chord, previous) {
+    return {
+      chord, previousChord: previous?.chord,
+      piano: { pitches: T.leadPiano(chord, previous?.piano.pitches, $('piano-layout').value), previous: previous?.piano.pitches },
+      guitar: { ...G.leadTriad(chord, previous?.guitar, $('cycle-direction').value), previous: previous?.guitar.pitches, previousFrets: previous?.guitar.frets }
+    };
+  }
+  function showCycleChord(note, category, voicings) {
+    const chord = cycleChord(note);
+    showChord(chord, category, chord.name, 'Condução automática: preserve as notas em comum e mova as outras para a posição mais próxima. A cifra com / indica o baixo de cada instrumento.', voicings);
+  }
+  function showCyclePreview(index = 0, previous = null) {
     clearPalettes(); const ns = cycleNotes(), type = $('cycle-direction').value === 'fourths' ? 'QUARTAS JUSTAS' : 'QUINTAS JUSTAS';
-    $('cycles-help').textContent = `Comece em ${ns[0].name}: ${ns.map(n => n.name).join(' → ')} → ${ns[0].name}. Cada passo sobe uma ${type === 'QUARTAS JUSTAS' ? 'quarta (5 semitons)' : 'quinta (7 semitons)'}. Usamos nomes enarmônicos para simplificar a volta (B = C♭, F♯ = G♭).`;
-    showChord(cycleChord(ns[index]), 'CICLO DE ' + type);
+    $('cycles-help').textContent = `Tônicas: ${ns.map(n => n.name).join(' → ')} → ${ns[0].name}. A tônica avança uma ${type === 'QUARTAS JUSTAS' ? 'quarta (5 semitons)' : 'quinta (7 semitons)'}, enquanto as vozes seguem pelo menor movimento. As inversões são automáticas. Nomes enarmônicos simplificam a volta (B = C♭, F♯ = G♭).`;
+    cycleCurrent = cycleVoicings(cycleChord(ns[index]), previous);
+    showCycleChord(ns[index], 'CICLO DE ' + type, cycleCurrent);
     $('chord-palette').classList.add('cycle-palette');
     ns.forEach((n, i) => {
-      const b = button(n.name, () => { stopCyclePlayback(); showCyclePreview(i); playChord(cycleChord(n)); });
+      const b = button(n.name, () => { const from = cycleCurrent; stopCyclePlayback(); showCyclePreview(i, from); playChord(cycleChord(n)); });
       b.dataset.cycleStep = i; b.classList.toggle('altered', /[#b]/.test(n.name)); b.setAttribute('aria-pressed', String(i === index)); $('chord-palette').append(b);
     });
   }
   function stopCyclePlayback() { cyclePlayback++; $('stop-cycle').hidden = true; cancelAudition(); }
   async function playFullCycle() {
     stopCyclePlayback(); const token = cyclePlayback, ns = cycleNotes(); $('stop-cycle').hidden = false;
+    let previous = null;
     for (let i = 0; i <= 12 && token === cyclePlayback; i++) {
-      showCyclePreview(i % 12); playChord(cycleChord(ns[i % 12]));
+      showCyclePreview(i % 12, previous); previous = cycleCurrent; playChord(cycleChord(ns[i % 12]));
       $('cycle-playback-status').textContent = i === 12 ? `Retorno a ${ns[0].name}. Ciclo completo.` : `${i + 1}/12 · ${ns[i].name}`;
       await new Promise(resolve => setTimeout(resolve, 950));
     }
@@ -472,12 +487,13 @@
     if (s.completed === 12) { endCycleExercise(`Ciclo concluído: ${s.correct}/12 acertos.`); showCyclePreview(); return; }
     s.answered = false; s.choice = null;
     const current = s.notes[s.completed], next = s.notes[(s.completed + 1) % 12]; s.expected = next.pc;
+    s.anchor = s.current || cycleVoicings(cycleChord(current));
     $('cycle-count').textContent = `Questão ${s.completed + 1}/12 · ${s.correct} acertos`;
-    $('cycles-help').textContent = 'Complete a volta pelos 12 tons. Os acordes demonstram cada tom; eles não são os graus de um único campo harmônico.';
+    $('cycles-help').textContent = 'Complete a volta mantendo as notas em comum. Cada alternativa parte do acorde atual e usa a inversão mais próxima.';
     $('cycle-question').textContent = `Depois de ${current.name}, qual é a próxima ${$('cycle-direction').value === 'fourths' ? 'quarta' : 'quinta'} justa?`;
     $('cycle-feedback').replaceChildren(); $('cycle-feedback').className = ''; $('cycles-panel').removeAttribute('data-result');
     $('confirm-cycle').hidden = false; $('confirm-cycle').disabled = true; $('next-cycle-question').hidden = true;
-    clearPalettes(); showChord(cycleChord(current), 'TOM DE PARTIDA', current.name);
+    clearPalettes(); showCycleChord(current, 'TOM DE PARTIDA', s.anchor);
     $('cycle-answers').replaceChildren();
     const choices = shuffle([next, ...shuffle(s.notes.filter(n => n.pc !== next.pc && n.pc !== current.pc)).slice(0, 3)]);
     for (const note of choices) {
@@ -485,7 +501,7 @@
         if (s !== cycleSession) return;
         if (!s.answered) { s.choice = note.pc; $('confirm-cycle').disabled = false; }
         $('cycle-answers').querySelectorAll('button').forEach(el => el.setAttribute('aria-pressed', String(el === b)));
-        showChord(cycleChord(note), 'EXEMPLO DA SUA ESCOLHA'); playChord(cycleChord(note));
+        showCycleChord(note, 'EXEMPLO DA SUA ESCOLHA', cycleVoicings(cycleChord(note), s.anchor)); playChord(cycleChord(note));
       });
       b.dataset.pc = note.pc; b.setAttribute('aria-pressed', 'false'); b.classList.toggle('altered', /[#b]/.test(note.name)); $('cycle-answers').append(b);
     }
@@ -501,7 +517,8 @@
     showResult($('cycle-feedback'), $('cycles-panel'), correct, `${from.name} → ${to.name}: ${$('cycle-direction').value === 'fourths' ? 'quarta justa, 5 semitons' : 'quinta justa, 7 semitons'}.`);
     $('confirm-cycle').hidden = true; $('next-cycle-question').hidden = false; $('next-cycle-question').textContent = s.completed === 12 ? 'Ver resultado →' : 'Próxima →';
     $('cycle-answers').querySelectorAll('button').forEach(b => { b.classList.toggle('correct', Number(b.dataset.pc) === s.expected); b.classList.toggle('wrong', !correct && Number(b.dataset.pc) === s.choice); });
-    showChord(cycleChord(to), 'RESPOSTA DO CICLO'); playChord(cycleChord(to));
+    s.current = cycleVoicings(cycleChord(to), s.anchor);
+    showCycleChord(to, 'RESPOSTA DO CICLO', s.current); playChord(cycleChord(to));
   }
   function setMode(nextMode) {
     endPractice(); stopGuided(); endCycleExercise(); stopAudio(); mode = nextMode;
@@ -534,13 +551,13 @@
   if (saved && typeof saved === 'object') for (const id of settingIds) {
     const el = $(id);
     if (el.tagName === 'SELECT' && [...el.options].some(o => o.value === saved[id])) el.value = saved[id];
-    if (['volume', 'guitar-volume', 'piano-volume'].includes(id) && Number.isFinite(Number(saved[id]))) el.value = Math.max(0, Math.min(100, Number(saved[id])));
+    if (['volume', 'guitar-volume', 'piano-volume', 'feedback-volume'].includes(id) && Number.isFinite(Number(saved[id]))) el.value = Math.max(0, Math.min(100, Number(saved[id])));
     if (el.type === 'checkbox' && typeof saved[id] === 'boolean') el.checked = saved[id];
   }
   const oldStats = read(statsKey);
   if (oldStats && ['attempts', 'correct', 'sessions'].every(k => Number.isSafeInteger(oldStats[k]) && oldStats[k] >= 0) && oldStats.correct <= oldStats.attempts) stats = oldStats;
   $('volume-value').textContent = $('volume').value + '%'; soundEngine.setVolume(Number($('volume').value) / 100);
-  for (const channel of ['guitar', 'piano']) {
+  for (const channel of ['guitar', 'piano', 'feedback']) {
     soundEngine.setVolume(Number($(channel + '-volume').value) / 100, channel);
     $(channel + '-volume-value').textContent = $(channel + '-volume').value === '0' ? 'Mudo' : $(channel + '-volume').value + '%';
   }
@@ -560,18 +577,33 @@
     if (['exercise-chord-type', 'practice-field-format', 'ear-level'].includes(el.id)) return;
     if (['guided-sequence', 'guided-format', 'guided-cycles'].includes(el.id)) { if (!guided) showGuidedPreview(); return; }
     if (!guided) stopAudio();
-    if (cycleSession) { draw(); return; }
-    if (mode === 'cycles') { stopCyclePlayback(); showCyclePreview(); return; }
+    if (cycleSession) {
+      if (el.id === 'piano-layout') {
+        const s = cycleSession;
+        s.anchor = { ...s.anchor, piano: { pitches: T.leadPiano(s.anchor.chord, s.anchor.piano.pitches, el.value) } };
+        const note = s.answered ? s.notes[s.completed % 12] : s.choice === null ? s.notes[s.completed] : s.notes.find(n => n.pc === s.choice);
+        const voicings = !s.answered && s.choice === null ? s.anchor : cycleVoicings(cycleChord(note), s.anchor);
+        if (s.answered) s.current = voicings;
+        showCycleChord(note, s.answered ? 'RESPOSTA DO CICLO' : s.choice === null ? 'TOM DE PARTIDA' : 'EXEMPLO DA SUA ESCOLHA', voicings);
+      } else draw();
+      return;
+    }
+    if (mode === 'cycles') {
+      stopCyclePlayback();
+      if (['key', 'scale', 'cycle-direction', 'piano-layout'].includes(el.id)) showCyclePreview(); else draw();
+      return;
+    }
     if (session) { if (session.type === 'build') buildHelp(); draw(); return; }
     if (guided) { guidedRound(); return; }
     if (mode === 'guided') showGuidedPreview(); else if (mode === 'cycles') showCyclePreview(); else showExplore();
   }));
-  for (const id of ['volume', 'guitar-volume', 'piano-volume']) $(id).addEventListener('input', () => {
+  for (const id of ['volume', 'guitar-volume', 'piano-volume', 'feedback-volume']) $(id).addEventListener('input', () => {
     const channel = id === 'volume' ? undefined : id.split('-')[0];
     soundEngine.setVolume(Number($(id).value) / 100, channel);
     $(id + '-value').textContent = $(id).value === '0' ? 'Mudo' : $(id).value + '%'; saveSettings();
   });
   $('feedback-sound').addEventListener('change', saveSettings);
+  for (const [id, correct] of [['preview-success', true], ['preview-error', false]]) $(id).addEventListener('click', () => { try { soundEngine.feedback(correct); } catch (_) { $('audio-status').textContent = 'Não foi possível iniciar o áudio dos avisos.'; } });
   $('silence').addEventListener('click', () => { if (guided) stopGuided(); stopCyclePlayback(); stopAudio(); });
   $('play-scene').addEventListener('click', () => playScene());
   $('play-guitar').addEventListener('click', () => playScene('guitar'));

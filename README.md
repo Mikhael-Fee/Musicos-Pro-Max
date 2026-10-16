@@ -8,15 +8,15 @@ Estúdio de prática musical em português para violão e teclado. Aplicação e
 - **Exercícios:** encontre a nota, monte o acorde, intervalos de ouvido, graus e campo harmônico. As opções de resposta tocam e ficam marcadas antes de confirmar. O exercício de nota tem resposta imediata.
 - **Treino guiado:** o modelo fica visível desde o início e soa junto com o tempo 1 do metrônomo. Há opção para tocar o acorde nos quatro tempos. Por padrão a passagem ao próximo acorde é manual; avanço automático e repetições são opcionais.
 
-- **Ciclos:** quartas justas e quintas justas em uma aba própria, com os 12 tons, audição da volta completa e treino de próximo tom.
+- **Ciclos:** quartas justas e quintas justas em uma aba própria, com os 12 tons, audição da volta completa e treino de próximo tom com condução automática de vozes.
 
-A configuração principal tem tom, escala e visualização. Inversão, posição aberta/fechada e volume do teclado ficam acima dele; posição e volume do violão ficam acima do violão. Volume geral, nomes das notas, modo de reprodução e som de acerto/erro ficam em “Ajustes”.
+A configuração principal tem tom, escala e visualização. Inversão, posição aberta/fechada e volume do teclado ficam acima dele; posição e volume do violão ficam acima do violão. Volume geral, nomes das notas, modo de reprodução e sons de acerto/erro ficam em “Ajustes”. Os avisos têm volume próprio (85% por padrão) e botões para ouvir as duas vinhetas de quatro notas: ascendente no acerto, descendente no erro.
 
 Cada instrumento usa seu próprio voicing no som e na marcação, inclusive ao exibir os dois. “Ouvir teclado” e “Ouvir violão” permitem a audição isolada; volume zero silencia apenas aquele instrumento. Nos exercícios, “Ver” muda a visualização sem encerrar a sessão e “Som do modelo” escolhe a referência sonora independentemente. Em “Monte o acorde”, clicar no outro instrumento muda a montagem ativa, preservando as duas seleções; a confirmação avalia somente o instrumento indicado em “Montar no”.
 
 No teclado, a posição fechada agrupa os sons em até uma oitava; a aberta desloca vozes internas uma oitava acima, mantendo as notas e o baixo da inversão escolhida. Inversões seguem a fórmula do acorde (terça, quinta, sétima), inclusive quando 9, 11 e 13 estão reunidas na posição fechada. A terceira inversão só está disponível a partir de quatro notas. Omitir extensões para simplificar um acorde de teclado não faz parte desta opção.
 
-Notas com sustenidos ou bemóis têm destaque azul, respeitando a grafia da tonalidade, inclusive E♯ numa tecla branca. Os nomes e esse destaque ficam ocultos durante “Encontre a nota”. Depois da resposta, o resultado ganha painel colorido, símbolo e som opcional.
+Notas com sustenidos ou bemóis têm preenchimento azul forte, respeitando a grafia da tonalidade, inclusive E♯ numa tecla branca. Sextas, sétimas e extensões 9/11/13 recebem preenchimento rosa nos botões, teclas ativas e pontos do violão. No teclado, uma etiqueta também mostra o grau. Se uma extensão tiver alteração, o rosa tem prioridade e um detalhe azul preserva a indicação da alteração. A seleção permanece indicada em laranja e branco. Os nomes e esse destaque ficam ocultos durante “Encontre a nota”. Depois da resposta, o resultado ganha painel colorido, símbolo e som opcional.
 
 ## Convenções de violão
 
@@ -65,7 +65,13 @@ A aba **Ciclos** é independente das progressões de campo harmônico. Quartas a
 
 Em Dó, quartas: C → F → Bb → Eb → Ab → Db → Gb → B → E → A → D → G → C. Quintas percorrem o sentido inverso. Há equivalências enarmônicas para evitar grafias pouco usuais (por exemplo, B equivale a Cb na passagem Gb → B).
 
-“Ouvir ciclo completo” demonstra os 12 acordes e retorna ao inicial. É possível parar a execução ou escolher um tom da sequência. “Treinar próximo tom” oferece 12 questões com alternativas que soam antes da confirmação, feedback de acerto/erro e registro único de cada resposta. O mapa completo fica oculto durante o treino. A última questão verifica o retorno ao ponto de partida. O som pode ser violão, teclado ou os dois, respeitando os volumes individuais.
+As posições seguem **condução de vozes**, preservando o maior número de vozes no mesmo lugar e minimizando o deslocamento das restantes. No teclado, as inversões são escolhidas automaticamente, respeitando a posição aberta/fechada. Exemplo em Dó maior: C3–E3–G3 → C3–F3–A3 (**C → F/C**), mantendo Dó e movendo Mi/Sol em um/dois semitons. Em quintas: C3–E3–G3 → B2–D3–G3 (**C → G/B**). A cifra com barra indica o baixo; o nome do acorde no topo identifica a harmonia.
+
+No violão, o ciclo usa tríades completas em três cordas vizinhas, mantendo as mesmas cordas, com amplitude máxima de quatro casas e até a casa 19. Em quintas, a tríade inicial é deslocada uma oitava acima para permitir a descida das vozes durante a volta. Os controles manuais de posição e inversão ficam ocultos nos ciclos; continuam disponíveis nos outros modos. O áudio, a indicação do baixo e a representação usam exatamente as posições calculadas. Cada instrumento informa quais notas ficam e quais teclas/casas devem mudar. Ao trocar o voicing, o teclado ajusta sua rolagem interna para manter as vozes visíveis, quando cabem na tela.
+
+Na volta completa, as tríades maiores/menores preservam uma voz e deslocam as outras duas um ou dois semitons em cada passagem, nos 12 tons e nos dois sentidos. A harmonia retorna ao início, podendo terminar em outra oitava: conservar o registro exato inicial forçaria um salto em alguma troca.
+
+“Ouvir ciclo completo” demonstra os 12 acordes e retorna à harmonia inicial. É possível parar a execução ou escolher um tom da sequência. “Treinar próximo tom” oferece 12 questões com alternativas que soam antes da confirmação, feedback de acerto/erro e registro único de cada resposta. Cada alternativa é conduzida a partir da posição de partida da questão, mesmo depois de ouvir alternativas erradas; a questão seguinte continua da posição correta confirmada. O mapa completo fica oculto durante o treino. A última questão verifica o retorno ao ponto de partida. O som pode ser violão, teclado ou os dois, respeitando os volumes individuais.
 
 ## Desenvolver e testar
 

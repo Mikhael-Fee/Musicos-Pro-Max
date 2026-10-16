@@ -102,6 +102,36 @@
     } });
     return cells;
   }
+  function leadTriad(chord, previous, direction = 'fourths') {
+    if (!previous) {
+      const seed = voicing(chord, true);
+      // Fifths descend through the voices: start one octave higher so a full
+      // turn can keep the same strings without running into the nut.
+      return describe(seed.frets.map(f => f === null ? null : f + (direction === 'fifths' ? 12 : 0)), chord, 'Tríade · condução automática');
+    }
+    const strings = previous.frets.flatMap((f, s) => f === null ? [] : [s]);
+    const allowed = chord.notes.map(n => n.pc), frets = Array(6).fill(null);
+    let best, score;
+    function visit(index) {
+      if (index === strings.length) {
+        const used = frets.filter(f => f > 0);
+        if (used.length && Math.max(...used) - Math.min(...used) > 3) return;
+        const candidate = describe([...frets], chord, 'Tríade · condução automática');
+        if (candidate.omitted.length || candidate.pitches.at(-1) - candidate.pitches[0] >= 12) return;
+        if (candidate.pitches.some((p, i) => i && p <= candidate.pitches[i - 1])) return;
+        const motion = T.motionScore(previous.pitches, candidate.pitches);
+        if (!best || T.compareMotion(motion, score) < 0) { best = candidate; score = motion; }
+        return;
+      }
+      const string = strings[index];
+      for (let fret = 0; fret <= 19; fret++) if (allowed.includes(T.mod(TUNING[string] + fret))) {
+        frets[string] = fret; visit(index + 1);
+      }
+      frets[string] = null;
+    }
+    visit(0);
+    return best || leadTriad(chord, null, direction);
+  }
   function ascendingPath(scale, position = 0) {
     const cells = scalePosition(scale, position).sort((a, b) => a.midi - b.midi || a.string - b.string);
     for (const rootCell of cells.filter(n => n.degree === 1)) {
@@ -114,7 +144,7 @@
     }
     return [];
   }
-  const api = { TUNING, OPEN, OPEN_FINGERS, voicing, scalePosition, ascendingPath, valid };
+  const api = { TUNING, OPEN, OPEN_FINGERS, voicing, leadTriad, scalePosition, ascendingPath, valid };
   root.GuitarTheory = api;
   if (typeof module !== 'undefined') module.exports = api;
 })(typeof window === 'undefined' ? globalThis : window);

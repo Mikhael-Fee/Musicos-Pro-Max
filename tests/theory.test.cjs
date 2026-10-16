@@ -119,3 +119,31 @@ test('fourth and fifth cycles visit all twelve keys, transpose and return to the
     notes.forEach((n, i) => assert.equal(T.mod(notes[(i + 1) % 12].pc - n.pc), step));
   }
 });
+
+test('cycle voice leading retains a common tone and moves the other voices by at most a whole tone', () => {
+  const c = T.buildChord(0), f = T.buildChord(5), g = T.buildChord(7);
+  assert.deepEqual(T.leadPiano(f, [48, 52, 55]), [48, 53, 57]);
+  assert.deepEqual(T.leadPiano(g, [48, 52, 55]), [47, 50, 55]);
+  assert.equal(T.voicingName(f, [48, 53, 57]), 'F/C');
+  assert.equal(T.voicingName(g, [47, 50, 55]), 'G/B');
+  for (let root = 0; root < 12; root++) for (const type of ['major', 'minor']) for (const direction of ['fourths', 'fifths']) for (const layout of ['closed', 'open']) {
+    let piano, guitar;
+    const notes = T.cycle(root, direction);
+    for (const note of [...notes, notes[0]]) {
+      const chord = T.buildChord(note.pc, type, note.name);
+      const nextPiano = T.leadPiano(chord, piano, layout), nextGuitar = G.leadTriad(chord, guitar, direction);
+      assert.equal(new Set(nextPiano.map(T.mod)).size, 3);
+      assert.ok(nextPiano.every(p => chord.notes.some(n => n.pc === T.mod(p))));
+      assert.ok(G.valid(nextGuitar.frets, chord, false));
+      assert.equal(nextGuitar.frets.filter(f => f !== null).length, 3);
+      assert.ok(nextGuitar.frets.every(f => f === null || f >= 0 && f <= 19));
+      if (piano) assert.deepEqual(T.motionScore(piano, nextPiano), [2, 3, 2]);
+      if (guitar) {
+        assert.deepEqual(T.motionScore(guitar.pitches, nextGuitar.pitches), [2, 3, 2]);
+        assert.deepEqual(nextGuitar.frets.map(f => f !== null), guitar.frets.map(f => f !== null));
+      }
+      piano = nextPiano; guitar = nextGuitar;
+    }
+  }
+  assert.deepEqual(G.leadTriad(f, G.leadTriad(c)).frets, [null, 3, 3, 2, null, null]);
+});

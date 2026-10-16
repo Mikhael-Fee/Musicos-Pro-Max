@@ -28,7 +28,7 @@
   class SoundEngine {
     constructor(context = null) {
       this.context = context; this.volume = .55;
-      this.levels = { guitar: 1, piano: 1, feedback: .42, metronome: 1 };
+      this.levels = { guitar: 1, piano: 1, feedback: .85, metronome: 1 };
       this.voices = new Set(); this.voiceChannels = new Map(); this.cache = new Map(); this.noteSequence = 0;
     }
     init() {
@@ -104,14 +104,19 @@
     }
     feedback(correct) {
       const ctx = this.init();
-      const tones = correct ? [880, 1174.66, 1396.91] : [587.33, 440];
+      // Original four-note motifs: a bright rising reward and a rounded descent.
+      const tones = correct ? [523.25, 659.25, 783.99, 1046.5] : [392, 349.23, 329.63, 261.63];
       tones.forEach((frequency, i) => {
-        const source = ctx.createOscillator(), gain = ctx.createGain(), at = ctx.currentTime + i * .075;
-        source.type = 'sine'; source.frequency.value = frequency;
-        gain.gain.setValueAtTime(0, at); gain.gain.linearRampToValueAtTime(.16, at + .006);
-        gain.gain.exponentialRampToValueAtTime(.0001, at + .12);
-        source.connect(gain).connect(this.channels.feedback); this.track(source, [gain], 'feedback', at, ++this.noteSequence); source.start(at); source.stop(at + .14);
+        const at = ctx.currentTime + [0, .09, .18, .30][i], duration = i === 3 ? .30 : .15, group = ++this.noteSequence;
+        for (const [harmonic, amplitude] of [[1, .4], [2, .12], [3, .05]]) {
+          const source = ctx.createOscillator(), gain = ctx.createGain();
+          source.type = 'sine'; source.frequency.value = frequency * harmonic;
+          gain.gain.setValueAtTime(0, at); gain.gain.linearRampToValueAtTime(amplitude, at + .004);
+          gain.gain.exponentialRampToValueAtTime(.0001, at + duration);
+          source.connect(gain).connect(this.channels.feedback); this.track(source, [gain], 'feedback', at, group); source.start(at); source.stop(at + duration + .025);
+        }
       });
+      return .625;
     }
     release(source, duration = .025) {
       const voice = this.voiceChannels.get(source);
