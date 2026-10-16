@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Musicos Pro Max - MKL</title>
+    <style>
+        /* CSS: Variáveis Globais (Design Limpo e Otimizado) */
+        :root {
+            --neon-ciano: #00ffcc;
+            --neon-magenta: #ff00ff;
+            --neon-amarelo: #ffcc00;
+            --neon-laranja: #ff9900;
+            --bg-escuro: #0d0d12;
+            --bg-painel: rgba(20, 20, 25, 0.8);
+            --bg-alerta: rgba(255, 0, 85, 1);
+        }
+
+        body {
+            background-color: var(--bg-escuro); color: var(--neon-ciano); font-family: 'Courier New', Courier, monospace;
+            display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0;
+            background-image: radial-gradient(circle at center, #1a1a2e 0%, #000000 100%); min-height: 100vh; overflow-x: hidden;
+        }
+        h1 {
+            color: var(--neon-magenta); text-shadow: 0 0 10px var(--neon-magenta), 0 0 20px var(--neon-magenta); text-transform: uppercase;
+            letter-spacing: 2px; text-align: center; font-size: 28px; width: 100%; margin-bottom: 20px;
+        }
+
+        .main-layout { display: flex; flex-direction: column; gap: 30px; width: 100%; max-width: 1200px; }
+        @media (min-width: 950px) {
+            .main-layout { flex-direction: row; align-items: flex-start; justify-content: center; }
+            .hud-container { flex: 1; max-width: 550px; margin-bottom: 0; position: relative; }
+            .side-panel { flex: 1; max-width: 650px; display: flex; flex-direction: column; gap: 20px; position: sticky; top: 20px; }
+        }
+
+        .hud-container {
+            background-color: var(--bg-painel); border: 2px solid var(--neon-ciano); border-radius: 12px;
+            box-shadow: 0 0 20px rgba(0, 255, 204, 0.5), inset 0 0 10px rgba(0, 255, 204, 0.2);
+            backdrop-filter: blur(5px); box-sizing: border-box; width: 100%; overflow: hidden; transition: all 0.1s;
+        }
+
+        /* SKILL: BARRA DE PROGRESSO DO METRÔNOMO */
+        .progress-wrapper { width: 100%; height: 4px; background: rgba(0, 255, 204, 0.1); position: absolute; top: 0; left: 0; z-index: 10; }
+        .progress-bar { height: 100%; width: 0%; background: var(--neon-ciano); transition: width 0.1s linear; box-shadow: 0 0 10px var(--neon-ciano); }
+
+        .hud-padding { padding: 20px; margin-top: 4px; }
+
+        .tab-header { display: flex; width: 100%; border-bottom: 2px solid var(--neon-ciano); background-color: #0a0a0f; }
+        .tab-btn {
+            flex: 1; padding: 15px; font-size: 14px; font-weight: bold; color: #666;
+            background: none; border: none; cursor: pointer; text-transform: uppercase; transition: all 0.3s;
+        }
+        .tab-btn.active { color: var(--neon-magenta); text-shadow: 0 0 10px var(--neon-magenta); background-color: rgba(255, 0, 255, 0.1); border-bottom: 3px solid var(--neon-magenta); }
+        .tab-btn:disabled { cursor: not-allowed; opacity: 0.5; }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+        .config-group { background-color: rgba(0, 255, 204, 0.03); border: 1px solid rgba(0, 255, 204, 0.2); border-radius: 8px; padding: 15px; margin-bottom: 15px; }
+        .group-title { color: var(--neon-ciano); font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid rgba(0, 255, 204, 0.2); padding-bottom: 5px; }
+
+        .grid-2-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: start;}
+
+        label { display: block; margin-top: 5px; font-weight: bold; color: var(--neon-magenta); font-size: 11px; text-shadow: 0 0 3px rgba(255, 0, 255, 0.3); text-transform: uppercase; letter-spacing: 0.5px;}
+        input[type="number"], select {
+            width: 100%; padding: 8px; margin-top: 2px; background-color: #121218;
+            color: var(--neon-ciano); border: 1px solid var(--neon-magenta); border-radius: 5px; box-sizing: border-box; font-size: 13px; font-family: inherit;
+        }
+        input:focus, select:focus { outline: none; box-shadow: 0 0 10px var(--neon-magenta); }
+
+        #painelFocado, #painelRegraSetima, #painelInversao, #painelViolao { display: none; padding: 10px; border-radius: 8px; margin-top: 5px;}
+        #painelFocado { background-color: rgba(255, 0, 255, 0.05); border: 1px dashed var(--neon-magenta); grid-column: span 2;}
+        #painelRegraSetima { background-color: rgba(255, 204, 0, 0.05); border: 1px dashed var(--neon-amarelo); grid-column: span 2;}
+        #painelInversao { background-color: rgba(0, 255, 204, 0.05); border: 1px dashed var(--neon-ciano); margin-bottom: 15px;}
+        #painelViolao { background-color: rgba(255, 153, 0, 0.05); border: 1px dashed var(--neon-laranja); }
+
+        .checkbox-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px; }
+        .checkbox-grid label { margin-top: 0; color: var(--neon-ciano); text-shadow: none; font-weight: normal; font-size: 12px; display: flex; align-items: center; text-transform: none;}
+        .checkbox-grid input { margin-right: 5px; accent-color: var(--neon-magenta); transform: scale(1.1); }
+
+        button.run-btn {
+            margin-top: 5px; width: 100%; padding: 15px; font-size: 16px; font-weight: bold; color: #0d0d12;
+            background-color: var(--neon-ciano); border: none; border-radius: 5px; cursor: pointer; transition: all 0.3s; text-transform: uppercase; box-shadow: 0 0 15px var(--neon-ciano);
+        }
+        button.run-btn:hover { background-color: var(--neon-magenta); color: #fff; box-shadow: 0 0 25px var(--neon-magenta); }
+        button.run-btn:disabled { background-color: transparent; color: #666; border: 1px dashed #444; box-shadow: none; cursor: not-allowed; animation: pulseWait 2s infinite; }
+        @keyframes pulseWait { 50% { border-color: var(--neon-ciano); color: var(--neon-ciano); } }
+
+        /* Cores Dinâmicas dos Botões */
+        .free-roam-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px; }
+        .free-roam-btn {
+            padding: 10px; font-size: 14px; font-weight: bold; color: #fff;
+            background-color: rgba(255, 0, 255, 0.1); border: 1px solid #555; border-radius: 5px; cursor: pointer; transition: all 0.2s;
+            text-transform: uppercase; display: flex; flex-direction: column; align-items: center; gap: 4px;
+        }
+        .free-roam-btn span { font-size: 11px; text-shadow: none; }
+        .free-roam-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        .btn-maior { border-color: var(--neon-ciano); color: var(--neon-ciano); box-shadow: inset 0 0 5px rgba(0, 255, 204, 0.2); }
+        .btn-maior span { color: var(--neon-ciano); }
+        .btn-maior:hover { background-color: var(--neon-ciano); color: #000; box-shadow: 0 0 15px var(--neon-ciano); }
+        .btn-maior:hover span { color: #000; }
+
+        .btn-menor { border-color: var(--neon-magenta); color: var(--neon-magenta); box-shadow: inset 0 0 5px rgba(255, 0, 255, 0.2); }
+        .btn-menor span { color: var(--neon-magenta); }
+        .btn-menor:hover { background-color: var(--neon-magenta); color: #fff; box-shadow: 0 0 15px var(--neon-magenta); }
+        .btn-menor:hover span { color: #fff; }
+
+        .btn-dim { border-color: var(--neon-amarelo); color: var(--neon-amarelo); box-shadow: inset 0 0 5px rgba(255, 204, 0, 0.2); }
+        .btn-dim span { color: var(--neon-amarelo); }
+        .btn-dim:hover { background-color: var(--neon-amarelo); color: #000; box-shadow: 0 0 15px var(--neon-amarelo); }
+        .btn-dim:hover span { color: #000; }
+
+        .btn-g7 { grid-column: span 2; }
+
+        #console-log {
+            background-color: var(--bg-escuro); color: #00ff00; width: 100%; height: 180px;
+            overflow-y: auto; padding: 15px; border: 1px solid rgba(0, 255, 0, 0.3); border-radius: 8px; font-size: 13px; line-height: 1.6;
+            box-sizing: border-box; box-shadow: inset 0 0 10px rgba(0, 255, 0, 0.05); text-shadow: none;
+        }
+        #console-log span.line { display: block; padding-left: 1.2em; text-indent: -1.2em; }
+
+        /* 🎹 TECLADO */
+        .piano-wrapper { width: 100%; border-radius: 8px; overflow: hidden; border: 2px solid var(--neon-magenta); box-shadow: 0 0 15px rgba(255, 0, 255, 0.4); background-color: #222; padding: 10px; box-sizing: border-box; }
+        .piano-container { position: relative; width: 100%; height: 110px; display: flex; background-color: #111; }
+
+        .key-white {
+            width: calc(100% / 14); height: 100%; background: linear-gradient(180deg, #fff 0%, #d0d0d0 100%); border: 1px solid #333; border-radius: 0 0 4px 4px; box-sizing: border-box;
+            position: relative; z-index: 1; transition: all 0.2s; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 5px; cursor: pointer;
+        }
+        .key-black {
+            position: absolute; width: calc(100% / 22); height: 65%; background: linear-gradient(180deg, #333 0%, #000 100%); border-radius: 0 0 4px 4px; z-index: 2; border: 1px solid #000;
+            transition: all 0.2s; box-shadow: inset 0 -5px 10px rgba(0,0,0,0.8); display: flex; align-items: flex-end; justify-content: center; padding-bottom: 5px; cursor: pointer;
+        }
+
+        .pos-cs1 { left: calc((100% / 14) * 1 - (100% / 44)); } .pos-ds1 { left: calc((100% / 14) * 2 - (100% / 44)); }
+        .pos-fs1 { left: calc((100% / 14) * 4 - (100% / 44)); } .pos-gs1 { left: calc((100% / 14) * 5 - (100% / 44)); } .pos-as1 { left: calc((100% / 14) * 6 - (100% / 44)); }
+        .pos-cs2 { left: calc((100% / 14) * 8 - (100% / 44)); } .pos-ds2 { left: calc((100% / 14) * 9 - (100% / 44)); }
+        .pos-fs2 { left: calc((100% / 14) * 11 - (100% / 44)); } .pos-gs2 { left: calc((100% / 14) * 12 - (100% / 44)); } .pos-as2 { left: calc((100% / 14) * 13 - (100% / 44)); }
+
+        .key-white.active, .key-black.active { background: var(--neon-ciano) !important; box-shadow: 0 0 15px var(--neon-ciano), inset 0 0 10px #fff; border-color: #fff; }
+        .key-white.root-active { background: var(--neon-magenta) !important; box-shadow: 0 0 20px var(--neon-magenta), inset 0 0 10px #fff; border-color: #fff; z-index: 1;}
+        .key-black.root-active { background: var(--neon-magenta) !important; box-shadow: 0 0 20px var(--neon-magenta), inset 0 0 10px #fff; border-color: #fff; z-index: 3;}
+        .key-white.seventh-active { background: var(--neon-amarelo) !important; box-shadow: 0 0 15px var(--neon-amarelo), inset 0 0 10px #fff; border-color: #fff; z-index: 1;}
+        .key-black.seventh-active { background: var(--neon-amarelo) !important; box-shadow: 0 0 15px var(--neon-amarelo), inset 0 0 10px #fff; border-color: #fff; z-index: 3;}
+
+        .piano-key-label { font-size: 8px; font-weight: bold; pointer-events: none; text-align: center; line-height: 1.1; }
+        .key-white .piano-key-label { color: #333; } .key-black .piano-key-label { color: #aaa; }
+        .key-black.active .piano-key-label, .key-black.root-active .piano-key-label, .key-black.seventh-active .piano-key-label { color: #000; }
+
+        .click-fx-piano { background: #ffffff !important; box-shadow: 0 0 30px #ffffff, inset 0 0 15px #000 !important; transform: translateY(4px) scale(0.98); transition: 0.05s !important; }
+
+        /* 🎸 VIOLÃO BLINDADO */
+        .guitar-wrapper { width: 100%; border-radius: 8px; overflow: hidden; border: 2px solid var(--neon-ciano); box-shadow: 0 0 15px rgba(0, 255, 204, 0.4); background-color: #2d1b11; padding: 10px; box-sizing: border-box; }
+        .fretboard-container { position: relative; width: 100%; display: flex; flex-direction: column; background: #3e2723; border-radius: 4px; border: 1px solid #1a100b; }
+        .guitar-string { display: flex; height: 28px; position: relative; z-index: 2;}
+        .string-line { position: absolute; left: 0; right: 0; top: 50%; height: 2px; background: #b0bec5; transform: translateY(-50%); z-index: 1; box-shadow: 0 1px 2px #000; pointer-events: none;}
+        .fret { flex: 1 1 0; border-right: 2px solid #9e9e9e; position: relative; display: flex; justify-content: center; align-items: center; box-sizing: border-box; transition: all 0.3s;}
+        .fret.nut { border-right: 6px solid #fff; flex: 0.5 1 0; background: #111; }
+
+        .fret-dots { position: absolute; top: 0; left: 0; right: 0; bottom: 20px; display: flex; z-index: 0; pointer-events: none;}
+        .fret-dot-col { flex: 1 1 0; display: flex; justify-content: center; align-items: center; } .fret-dot-col.nut-col { flex: 0.5 1 0; }
+        .dot { width: 12px; height: 12px; background: rgba(255, 255, 255, 0.2); border-radius: 50%; }
+        .double-dot { display: flex; flex-direction: column; gap: 40px; }
+        .fret-dot-col:nth-child(4), .fret-dot-col:nth-child(6), .fret-dot-col:nth-child(8), .fret-dot-col:nth-child(10) { background: rgba(255,255,255,0.03); }
+        .fret-dot-col:nth-child(13) { background: rgba(255,255,255,0.05); }
+
+        .guitar-note {
+            position: absolute; width: 18px; height: 18px; border-radius: 50%; background: #000; border: 1px solid #fff; cursor: pointer;
+            color: #fff; font-size: 9px; display: flex; justify-content: center; align-items: center; opacity: 0; transition: all 0.2s; font-weight: bold; z-index: 4;
+        }
+        .guitar-note.active { opacity: 1; background-color: var(--neon-ciano); box-shadow: 0 0 10px var(--neon-ciano); color: #000; border: none;}
+        .guitar-note.root-active { opacity: 1; background-color: var(--neon-magenta); box-shadow: 0 0 15px var(--neon-magenta); color: #fff; border: none; }
+        .guitar-note.seventh-active { opacity: 1; background-color: var(--neon-amarelo); box-shadow: 0 0 15px var(--neon-amarelo); color: #000; border: none; }
+
+        .guitar-note:hover { opacity: 1; transform: scale(1.2); }
+        .click-fx-guitar { background-color: var(--neon-laranja) !important; box-shadow: 0 0 25px var(--neon-laranja), inset 0 0 5px #fff !important; color: #000 !important; transform: scale(1.6) !important; transition: 0.05s !important; }
+
+        /* PESTANA VISUAL INVERTIDA */
+        .fret.fret-pestana::before {
+            content: ''; position: absolute; top: -14px; bottom: -14px; left: 50%; width: 12px; pointer-events: none;
+            background: rgba(0, 255, 204, 0.35); border: 1px solid var(--neon-ciano); border-top: none; border-bottom: none;
+            transform: translateX(-50%); z-index: 3; box-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
+        }
+        .fret.fret-pestana.pestana-top::before { top: 8px; border-top: 1px solid var(--neon-ciano); border-top-left-radius: 6px; border-top-right-radius: 6px; }
+        .fret.fret-pestana.pestana-bottom::before { bottom: 8px; border-bottom: 1px solid var(--neon-ciano); border-bottom-left-radius: 6px; border-bottom-right-radius: 6px; }
+        .fret.fret-pestana.pestana-top.pestana-bottom::before { top: 8px; bottom: 8px; border-radius: 6px; }
+
+        /* FIX DE LAYOUT: Largura Fixa da Coluna */
+        .string-labels-col { width: 85px; flex-shrink: 0; display: flex; flex-direction: column; padding-right: 10px; justify-content: flex-start; }
+        .string-label { height: 28px; display: flex; align-items: center; justify-content: flex-end; color: var(--neon-ciano); font-size: 11px; font-weight: bold; }
+        .fret-labels-row { display: flex; height: 20px; margin-top: 5px; background-color: #1a100b; border-top: 1px solid #000;}
+        .fret-label { flex: 1 1 0; display: flex; justify-content: center; align-items: center; color: var(--neon-magenta); font-size: 10px; font-weight: bold; border-right: 2px solid transparent; box-sizing: border-box; transition: all 0.3s;}
+        .fret-label.nut-col { flex: 0.5 1 0; border-right: 6px solid transparent; }
+
+        .fret.blocked { background-color: #0a0503 !important; border-right: 2px solid #333;}
+        .fret.blocked .guitar-note { display: none !important; }
+        .fret-label.blocked { color: #555; }
+        .fret.has-capo { box-shadow: inset 6px 0 0 #b0bec5, inset 8px 0 5px #000 !important; }
+        .mute-x { color: var(--bg-alerta); margin-left: 5px; font-weight: bold; text-shadow: 0 0 5px var(--bg-alerta); }
+
+        #overlayBypass { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0, 0, 0, 0.95); z-index: 9999; display: flex; justify-content: center; align-items: center; flex-direction: column; color: var(--neon-magenta); text-align: center; cursor: pointer; }
+        #overlayBypass h2 { text-shadow: 0 0 20px var(--neon-magenta); animation: piscar 1s infinite alternate; }
+    </style>
+</head>
+<body>
+
+    <div id="overlayBypass" onclick="hackearAudioMobile()">
+        <h2>[ TOQUE NA TELA PARA INICIAR A ENGINE AUDIO ]</h2>
+    </div>
+
+    <h1>Treino de Graus</h1>
+
+    <div class="main-layout">
+
+        <div class="hud-container" id="hudMain">
+            <div class="progress-wrapper"><div class="progress-bar" id="beat-progress"></div></div>
+
+            <div class="tab-header">
+                <button id="tab-btn-free" class="tab-btn active" onclick="mudarAba('paraiso', this)">Modo Estudo</button>
+                <button id="tab-btn-rank" class="tab-btn" onclick="mudarAba('sobrevivencia', this)">Modo Desafio</button>
+            </div>
+
+            <div class="hud-padding">
+
+                <!-- BLOCCO 1: HARMONIA (Grid 2 Colunas) -->
+                <div class="config-group">
+                    <h3 class="group-title">Setup de Harmonia</h3>
+                    <div class="grid-2-col">
+                        <div>
+                            <label>Tom Principal:</label>
+                            <select id="tomFixo" onchange="aoMudarConfigGlobal()">
+                                <option value="C">C (Dó)</option>
+                                <option value="C#/Db">C# / Db (Dó# / Réb)</option>
+                                <option value="D" selected>D (Ré)</option>
+                                <option value="D#/Eb">D# / Eb (Ré# / Mib)</option>
+                                <option value="E">E (Mi)</option>
+                                <option value="F">F (Fá)</option>
+                                <option value="F#/Gb">F# / Gb (Fá# / Solb)</option>
+                                <option value="G">G (Sol)</option>
+                                <option value="G#/Ab">G# / Ab (Sol# / Láb)</option>
+                                <option value="A">A (Lá)</option>
+                                <option value="A#/Bb">A# / Bb (Lá# / Sib)</option>
+                                <option value="B">B (Si)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>Escala Base:</label>
+                            <select id="escalaFixa" onchange="aoMudarConfigGlobal()">
+                                <option value="Maior">Maior</option>
+                                <option value="Menor">Menor</option>
+                            </select>
+                        </div>
+                        <div style="grid-column: span 2;">
+                            <label>Formato Base do Acorde:</label>
+                            <select id="formatoAcorde" onchange="aoMudarConfigGlobal()">
+                                <option value="triade">Tríades (Acordes Simples - 3 Notas)</option>
+                                <option value="tetrade">Tétrades (Acordes com Sétima - 4 Notas)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="painelRegraSetima">
+                        <label style="color: var(--neon-amarelo);">Regra das Sétimas:</label>
+                        <select id="tipoSetima" onchange="aoMudarConfigGlobal()">
+                            <option value="diatonica">Diatônica (Matemática do Campo Harmônico)</option>
+                            <option value="maior">Forçar Sétima Maior (7M)</option>
+                            <option value="menor">Forçar Sétima Menor (7)</option>
+                            <option value="ambas" id="opt-setima-ambas" style="display: none;">Ambas (Aleatório - Apenas Desafio)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- BLOCCO 2: SISTEMA E ÁUDIO -->
+                <div class="config-group">
+                    <h3 class="group-title">Engine e Áudio</h3>
+                    <div class="grid-2-col">
+                        <div style="grid-column: span 2;">
+                            <label>Instrumento Visual na Tela:</label>
+                            <select id="instVisual" onchange="atualizarInterface()">
+                                <option value="ambos">Mostrar Teclado e Violão</option>
+                                <option value="teclado">Mostrar Apenas Teclado</option>
+                                <option value="violao">Mostrar Apenas Violão</option>
+                            </select>
+                        </div>
+                        <div style="grid-column: span 2;">
+                            <!-- SKILL NOVA: MODO DE REPRODUÇÃO DO ACORDE -->
+                            <label>Modo de Reprodução (Toque):</label>
+                            <select id="modoReproducao">
+                                <option value="bloco">Tudo Junto (Acorde em Bloco)</option>
+                                <option value="arpejo">Dedilhado (Arpejo Rápido)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>Som do Metrônomo:</label>
+                            <select id="somTick">
+                                <option value="mec">Mecânico (Batida)</option>
+                                <option value="elec">Eletrônico (Bipe)</option>
+                                <option value="voz">Beatbox (Android)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>Ditar notas na resposta?</label>
+                            <select id="ditarNotas">
+                                <option value="sim">Sim (Falar em Voz)</option>
+                                <option value="nao">Não (Silenciar)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BLOCCO 3: PERIFÉRICOS EXCLUSIVOS -->
+                <div id="painelInversao">
+                    <label style="color: var(--neon-ciano);">Inversão (Setup do Teclado):</label>
+                    <select id="inversaoTeclado" onchange="aoMudarConfigGlobal()">
+                        <option value="0">Posição Fundamental (Baixo na Tônica)</option>
+                        <option value="1">1ª Inversão (Baixo na Terça)</option>
+                        <option value="2">2ª Inversão (Baixo na Quinta)</option>
+                        <option value="3" id="opt-inv3" style="display:none;">3ª Inversão (Baixo na Sétima)</option>
+                    </select>
+                </div>
+
+                <div id="painelViolao">
+                    <div class="grid-2-col">
+                        <div style="grid-column: span 2;">
+                            <label style="color: var(--neon-laranja);">Visualização (Setup do Violão):</label>
+                            <select id="modoViolao" onchange="aoMudarConfigGlobal()">
+                                <option value="shape" selected>CAGED (Pestanas / Acordes Completos)</option>
+                                <option value="mini">Drop Voicings (Simplificado: 3 a 4 Cordas)</option>
+                                <option value="aoe">Mapeamento Geral (Exibir tudo pelo braço)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="color: var(--neon-laranja);">Capotraste:</label>
+                            <select id="capotraste" onchange="aoMudarConfigGlobal()">
+                                <option value="0">Casa 0</option><option value="1">Casa 1</option><option value="2">Casa 2</option>
+                                <option value="3">Casa 3</option><option value="4">Casa 4</option><option value="5">Casa 5</option>
+                                <option value="6">Casa 6</option><option value="7">Casa 7</option><option value="8">Casa 8</option>
+                                <option value="9">Casa 9</option><option value="10">Casa 10</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="color: var(--neon-laranja);">Perspectiva (Cordas):</label>
+                            <select id="inverterCordas" onchange="aoInverterCordas()">
+                                <option value="corda1">Corda 1 (e) no Topo - Tablatura</option>
+                                <option value="corda6">Corda 6 (E) no Topo - Visão Jogador</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ABA 1: ESTUDO -->
+                <div id="aba-paraiso" class="tab-content active">
+                    <div class="config-group">
+                        <h3 class="group-title">Treino Livre (Interativo)</h3>
+                        <p style="font-size: 12px; color: #a0a0a0; line-height: 1.4; margin-top: 0;">
+                            Clique em um grau para ver o acorde ou <strong>clique direto nas notas do teclado/violão</strong> para ativar o Sintetizador Web Audio e ouvir o som!
+                        </p>
+
+                        <div class="free-roam-grid">
+                            <button class="free-roam-btn" id="btn-grau-1" onclick="dispararGrauLivre(1)">Grau 1 <span id="btn-grau-1-cifra"></span></button>
+                            <button class="free-roam-btn" id="btn-grau-2" onclick="dispararGrauLivre(2)">Grau 2 <span id="btn-grau-2-cifra"></span></button>
+                            <button class="free-roam-btn" id="btn-grau-3" onclick="dispararGrauLivre(3)">Grau 3 <span id="btn-grau-3-cifra"></span></button>
+                            <button class="free-roam-btn" id="btn-grau-4" onclick="dispararGrauLivre(4)">Grau 4 <span id="btn-grau-4-cifra"></span></button>
+                            <button class="free-roam-btn" id="btn-grau-5" onclick="dispararGrauLivre(5)">Grau 5 <span id="btn-grau-5-cifra"></span></button>
+                            <button class="free-roam-btn" id="btn-grau-6" onclick="dispararGrauLivre(6)">Grau 6 <span id="btn-grau-6-cifra"></span></button>
+                            <button class="free-roam-btn btn-g7" id="btn-grau-7" onclick="dispararGrauLivre(7)">Grau 7 <span id="btn-grau-7-cifra"></span></button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ABA 2: DESAFIO -->
+                <div id="aba-sobrevivencia" class="tab-content">
+                    <div class="config-group">
+                        <h3 class="group-title">Regras do Desafio</h3>
+
+                        <label style="margin-top:0;">Seleção de Tons:</label>
+                        <select id="modoRng" onchange="atualizarInterface()">
+                            <option value="desligado">Apenas o Tom Principal Escolhido</option>
+                            <option value="focado">Seleção Personalizada (Marcar Tons)</option>
+                            <option value="maior">Aleatório (Qualquer Tom Maior)</option>
+                            <option value="menor">Aleatório (Qualquer Tom Menor)</option>
+                            <option value="ambos">Caos Total (Maior e Menor Aleatórios)</option>
+                        </select>
+
+                        <div id="painelFocado">
+                            <label>Selecione os Tons para a Sessão:</label>
+                            <div class="checkbox-grid">
+                                <label><input type="checkbox" name="tomFocado" value="C"> C</label>
+                                <label><input type="checkbox" name="tomFocado" value="C#/Db"> C#/Db</label>
+                                <label><input type="checkbox" name="tomFocado" value="D"> D</label>
+                                <label><input type="checkbox" name="tomFocado" value="D#/Eb"> D#/Eb</label>
+                                <label><input type="checkbox" name="tomFocado" value="E"> E</label>
+                                <label><input type="checkbox" name="tomFocado" value="F"> F</label>
+                                <label><input type="checkbox" name="tomFocado" value="F#/Gb"> F#/Gb</label>
+                                <label><input type="checkbox" name="tomFocado" value="G"> G</label>
+                                <label><input type="checkbox" name="tomFocado" value="G#/Ab"> G#/Ab</label>
+                                <label><input type="checkbox" name="tomFocado" value="A"> A</label>
+                                <label><input type="checkbox" name="tomFocado" value="A#/Bb"> A#/Bb</label>
+                                <label><input type="checkbox" name="tomFocado" value="B"> B</label>
+                            </div>
+                            <label style="margin-top: 10px;">Ordem de Sorteio:</label>
+                            <select id="ordemFocado">
+                                <option value="sequencial">Sequencial</option>
+                                <option value="aleatorio">Aleatório</option>
+                            </select>
+                        </div>
+
+                        <div class="grid-2-col" style="margin-top: 10px;">
+                            <div>
+                                <label>Velocidade (BPM):</label>
+                                <input type="number" id="bpm" value="80" min="40" max="200">
+                            </div>
+                            <div>
+                                <label>Qtd de Acordes:</label>
+                                <input type="number" id="sessoes" value="14" min="1" max="100">
+                            </div>
+                        </div>
+                    </div>
+
+                    <button id="btnStart" class="run-btn" onclick="ativarEIniciar()">INICIAR DESAFIO</button>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="side-panel">
+
+            <div class="piano-wrapper" id="wrapper-piano">
+                <label style="margin-top: 0; margin-bottom: 5px; text-align: center; color: #fff; font-size: 13px;">Teclado Interativo (Tônica: <span style="color:var(--neon-magenta)">Rosa</span> | Sétima: <span style="color:var(--neon-amarelo)">Amarelo</span>)</label>
+                <div class="piano-container" id="piano-render"></div>
+            </div>
+
+            <div class="guitar-wrapper" id="wrapper-violao">
+                <label style="margin-top: 0; margin-bottom: 5px; text-align: center; color: #fff; font-size: 13px;">Braço do Violão Interativo (<span style="color:var(--bg-alerta)">[X]</span> = Corda Mutada)</label>
+                <div id="fretboard-render"></div>
+            </div>
+
+            <div id="console-log">
+                <span class="line">> Terminal de Sistema VEX.OS ativo.</span>
+                <span class="line">> Shapes de Violão Otimizados: Lacunas internas em Tétrades corrigidas (Barre Mode).</span>
+                <span class="line">> Roteamento Dinâmico: Seletor de Strumming (Bloco vs Dedilhado) operante.</span>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const CONSTANTES = {
+            NOTAS: ['C', 'C#/Db', 'D', 'D#/Eb', 'E', 'F', 'F#/Gb', 'G', 'G#/Ab', 'A', 'A#/Bb', 'B'],
+            FALADOS_ACORDE: { 'C': 'Dó', 'C#/Db': 'Dó sustenido ou Ré bemol', 'D': 'Ré', 'D#/Eb': 'Ré sustenido ou Mi bemol', 'E': 'Mi', 'F': 'Fá', 'F#/Gb': 'Fá sustenido ou Sol bemol', 'G': 'Sol', 'G#/Ab': 'Sol sustenido ou Lá bemol', 'A': 'Lá', 'A#/Bb': 'Lá sustenido ou Si bemol', 'B': 'Si' },
+            FALADOS_NOTAS: { 'C': 'Dó', 'C#/Db': 'Dó sustenido', 'D': 'Ré', 'D#/Eb': 'Ré sustenido', 'E': 'Mi', 'F': 'Fá', 'F#/Gb': 'Fá sustenido', 'G': 'Sol', 'G#/Ab': 'Sol sustenido', 'A': 'Lá', 'A#/Bb': 'Lá sustenido', 'B': 'Si' },
+            ESCALA_MAIOR: [0, 2, 4, 5, 7, 9, 11],
+            ESCALA_MENOR: [0, 2, 3, 5, 7, 8, 10],
+            Q_CIFRA_MAIOR: ["", "m", "m", "", "", "m", "dim"],
+            Q_CIFRA_MENOR: ["m", "dim", "", "m", "m", "", ""],
+            Q_AUDIO_MAIOR: ["Maior", "Menor", "Menor", "Maior", "Maior", "Menor", "Diminuto"],
+            Q_AUDIO_MENOR: ["Menor", "Diminuto", "Maior", "Menor", "Menor", "Maior", "Maior"],
+            TABELA_SETIMAS: {
+                Maior: { cifra: ['7M','m7','m7','7M','7','m7','m7b5'], audio: ['Sétima Maior', 'Sétima Menor', 'Sétima Menor', 'Sétima Maior', 'Dominante', 'Sétima Menor', 'Meio Diminuto'], offset: [11, 10, 10, 11, 10, 10, 10] },
+                Menor: { cifra: ['m7','m7b5','7M','m7','m7','7M','7'], audio: ['Sétima Menor', 'Meio Diminuto', 'Sétima Maior', 'Sétima Menor', 'Sétima Menor', 'Sétima Maior', 'Dominante'], offset: [10, 10, 11, 10, 10, 11, 10] }
+            },
+            SEQ_TECLADO_LABELS: [ 'C', 'C#<br>Db', 'D', 'D#<br>Eb', 'E', 'F', 'F#<br>Gb', 'G', 'G#<br>Ab', 'A', 'A#<br>Bb', 'B', 'C', 'C#<br>Db', 'D', 'D#<br>Eb', 'E', 'F', 'F#<br>Gb', 'G', 'G#<br>Ab', 'A', 'A#<br>Bb', 'B' ],
+            AFINA_CORDAS: [4, 11, 7, 2, 9, 4],
+            ABS_TUNING: [16, 11, 7, 2, -3, -8],
+            NOMES_CORDAS_VIOLAO: ['1 (e)', '2 (B)', '3 (G)', '4 (D)', '5 (A)', '6 (E)'],
+
+            // SKILL APLICADA: SHAPES_6 "Sem quebras no meio" (Barre Chords)
+            SHAPES_6: {
+                "": [0, 0, 1, 2, 2, 0],
+                "m": [0, 0, 0, 2, 2, 0],
+                "dim": [null, null, 0, 2, 1, 0], // Contínuo: 6,5,4,3
+                "7M": [0, 0, 1, 1, 2, 0], // Resolvido a quebra
+                "m7": [0, 0, 0, 0, 2, 0], // Resolvido a quebra
+                "7": [0, 0, 1, 0, 2, 0],  // Resolvido a quebra
+                "m7b5": [null, null, 0, 0, 1, 0] // Sem quebra
+            },
+            SHAPES_5: { "": [null, 2, 2, 2, 0, null], "m": [0, 1, 2, 2, 0, null], "dim": [null, 1, 2, 1, 0, null], "7M": [null, 2, 1, 2, 0, null], "m7": [0, 1, 0, 2, 0, null], "7": [0, 2, 0, 2, 0, null], "m7b5": [null, 1, 0, 1, 0, null] },
+            SHAPES_MINI_4: { "": [2, 3, 2, 0, null, null], "m": [1, 3, 2, 0, null, null], "dim": [1, 2, 1, 0, null, null], "7M": [2, 2, 2, 0, null, null], "m7": [1, 1, 2, 0, null, null], "7": [2, 1, 2, 0, null, null], "m7b5": [1, 1, 1, 0, null, null] },
+            SHAPES_MINI_5: { "": [null, 2, 2, 2, 0, null], "m": [null, 1, 2, 2, 0, null], "dim": [null, 1, 2, 1, 0, null], "7M": [null, 2, 1, 2, 0, null], "m7": [null, 1, 0, 2, 0, null], "7": [null, 2, 0, 2, 0, null], "m7b5": [null, 1, 0, 1, 0, null] },
+            SHAPES_MINI_6: { "": [null, null, 1, 2, 2, 0], "m": [null, null, 0, 2, 2, 0], "dim": [null, null, 0, 2, 1, 0], "7M": [null, null, 1, 1, 2, 0], "m7": [null, null, 0, 0, 2, 0], "7": [null, null, 1, 0, 2, 0], "m7b5": [null, null, 0, 0, 1, 0] }
+        };
+
+        const ESTADO = { ultimoGrauLivre: 0, rodando: false };
+
+        let audioCtx; let mobileDesbloqueado = false;
+        function hackearAudioMobile() {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext; audioCtx = new AudioContext();
+                const b = audioCtx.createBuffer(1, 1, 22050); const s = audioCtx.createBufferSource(); s.buffer = b; s.connect(audioCtx.destination); s.start(0);
+                document.getElementById("overlayBypass").style.display = "none"; mobileDesbloqueado = true; printLog("[SISTEMA] Motor de Áudio ativado.");
+            } catch(e) { console.error("Audio Context Falhou", e); }
+        }
+
+        function flashElemento(el, tipo) {
+            if(!el) return;
+            const classe = tipo === 'piano' ? 'click-fx-piano' : 'click-fx-guitar';
+            el.classList.add(classe);
+            setTimeout(() => el.classList.remove(classe), 150);
+        }
+
+        function tocarTeclado(notaIdxAbsoluta, el) {
+            if (!mobileDesbloqueado) hackearAudioMobile();
+            if (!audioCtx) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            flashElemento(el, 'piano');
+            const freq = 130.81 * Math.pow(2, notaIdxAbsoluta / 12);
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+
+            gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.6, audioCtx.currentTime + 0.02);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.5);
+
+            osc.connect(gainNode); gainNode.connect(audioCtx.destination);
+            osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + 1.5);
+        }
+
+        function tocarViolao(notaIdxAbsoluta, el) {
+            if (!mobileDesbloqueado) hackearAudioMobile();
+            if (!audioCtx) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            flashElemento(el, 'guitar');
+            const freq = 130.81 * Math.pow(2, notaIdxAbsoluta / 12);
+            const osc = audioCtx.createOscillator();
+            const filter = audioCtx.createBiquadFilter();
+            const gainNode = audioCtx.createGain();
+
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(freq * 5, audioCtx.currentTime);
+            filter.frequency.exponentialRampToValueAtTime(freq, audioCtx.currentTime + 0.5);
+
+            gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.7, audioCtx.currentTime + 0.01);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 2.0);
+
+            osc.connect(filter); filter.connect(gainNode); gainNode.connect(audioCtx.destination);
+            osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + 2.0);
+        }
+
+        function renderizarTeclado() {
+            let html = '';
+            for (let i = 0; i <= 23; i++) {
+                let isBlack = [1,3,6,8,10].includes(i%12);
+                let classType = isBlack ? 'key-black' : 'key-white';
+                let classPos = isBlack ? `pos-${CONSTANTES.NOTAS[i%12].replace(/#.*/,'').toLowerCase()}s${i<12?1:2}` : '';
+                html += `<div class="${classType} ${classPos}" id="key-${i}" onclick="tocarTeclado(${i}, this)"><span class="piano-key-label">${CONSTANTES.SEQ_TECLADO_LABELS[i]}</span></div>`;
+            }
+            document.getElementById('piano-render').innerHTML = html;
+        }
+
+        function renderizarFretboard() {
+            const casas = 12;
+            const corda6Topo = document.getElementById("inverterCordas").value === "corda6";
+            let renderOrder = corda6Topo ? [5, 4, 3, 2, 1, 0] : [0, 1, 2, 3, 4, 5];
+
+            let html = '<div style="display: flex;">';
+            html += '<div class="string-labels-col">';
+            for (let i = 0; i < 6; i++) { let s = renderOrder[i]; html += `<div class="string-label" id="str-lbl-${s}">${CONSTANTES.NOMES_CORDAS_VIOLAO[s]}</div>`; }
+            html += `<div class="string-label" style="height: 20px;"></div></div>`;
+
+            html += '<div class="fretboard-container" style="flex: 1;">';
+            html += `<div class="fret-dots"><div class="fret-dot-col nut-col"></div>`;
+            for (let f = 1; f <= casas; f++) {
+                if ([3, 5, 7, 9].includes(f)) { html += `<div class="fret-dot-col"><div class="dot"></div></div>`; }
+                else if (f === 12) { html += `<div class="fret-dot-col"><div class="double-dot"><div class="dot"></div><div class="dot"></div></div></div>`; }
+                else { html += `<div class="fret-dot-col"></div>`; }
+            }
+            html += `</div>`;
+
+            for (let i = 0; i < 6; i++) {
+                let s = renderOrder[i];
+                html += `<div class="guitar-string"><div class="string-line"></div>`;
+                for (let f = 0; f <= casas; f++) {
+                    let notaIdx = (CONSTANTES.AFINA_CORDAS[s] + f) % 12;
+                    let clsNut = f === 0 ? ' nut' : '';
+                    let notaLetra = CONSTANTES.NOTAS[notaIdx].split('/')[0];
+                    let absPitch = CONSTANTES.ABS_TUNING[s] + f;
+                    html += `<div class="fret${clsNut}" data-fret="${f}"><div class="guitar-note" id="g-note-${s}-${f}" data-nota="${notaIdx}" onclick="tocarViolao(${absPitch}, this)">${notaLetra}</div></div>`;
+                }
+                html += `</div>`;
+            }
+
+            html += `<div class="fret-labels-row"><div class="fret-label nut-col" data-fret="0">0</div>`;
+            for (let f = 1; f <= casas; f++) { html += `<div class="fret-label" data-fret="${f}">${f}</div>`; }
+            html += `</div></div></div>`;
+
+            document.getElementById('fretboard-render').innerHTML = html;
+            atualizarCapotraste();
+        }
+
+        function aoInverterCordas() { renderizarFretboard(); aoMudarConfigGlobal(); }
+
+        function mudarAba(idAba, elementoBotao) {
+            if (elementoBotao.disabled) return;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(aba => aba.classList.remove('active'));
+            elementoBotao.classList.add('active'); document.getElementById(`aba-${idAba}`).classList.add('active');
+
+            const selectSetima = document.getElementById("tipoSetima"); const optAmbas = document.getElementById("opt-setima-ambas");
+            if (idAba === "paraiso") { optAmbas.style.display = "none"; if (selectSetima.value === "ambas") selectSetima.value = "diatonica"; }
+            else { optAmbas.style.display = "block"; }
+            aoMudarConfigGlobal();
+        }
+
+        window.onload = function() {
+            renderizarTeclado();
+            renderizarFretboard();
+            atualizarInterface();
+            atualizarBotoesLivres();
+        };
+
+        function atualizarInterface() {
+            const modo = document.getElementById("modoRng").value;
+            document.getElementById("painelFocado").style.display = (modo === "focado") ? "block" : "none";
+
+            const inst = document.getElementById("instVisual").value;
+            document.getElementById("wrapper-piano").style.display = (inst === "ambos" || inst === "teclado") ? "block" : "none";
+            document.getElementById("wrapper-violao").style.display = (inst === "ambos" || inst === "violao") ? "block" : "none";
+            document.getElementById("painelInversao").style.display = (inst === "ambos" || inst === "teclado") ? "block" : "none";
+            document.getElementById("painelViolao").style.display = (inst === "ambos" || inst === "violao") ? "block" : "none";
+
+            const formAcorde = document.getElementById("formatoAcorde").value;
+            if (formAcorde === "tetrade") {
+                document.getElementById("painelRegraSetima").style.display = "block";
+                document.getElementById("opt-inv3").style.display = "block";
+            } else {
+                document.getElementById("painelRegraSetima").style.display = "none";
+                document.getElementById("opt-inv3").style.display = "none";
+                if(document.getElementById("inversaoTeclado").value === "3") document.getElementById("inversaoTeclado").value = "0";
+            }
+        }
+
+        function atualizarCapotraste() {
+            const capoValue = parseInt(document.getElementById("capotraste").value);
+            document.querySelectorAll('.fret, .fret-label').forEach(el => {
+                let fNum = parseInt(el.getAttribute('data-fret'));
+                if (fNum < capoValue) { el.classList.add('blocked'); el.classList.remove('has-capo'); }
+                else if (fNum === capoValue && capoValue > 0) { el.classList.remove('blocked'); el.classList.add('has-capo'); }
+                else { el.classList.remove('blocked', 'has-capo'); }
+            });
+        }
+
+        function atualizarBotoesLivres() {
+            const tomBase = document.getElementById("tomFixo").value; const escalaBase = document.getElementById("escalaFixa").value;
+            const formAcorde = document.getElementById("formatoAcorde").value === "tetrade"; let tipoSetima = document.getElementById("tipoSetima").value;
+            if (tipoSetima === "ambas") tipoSetima = "diatonica";
+
+            let campoMagico = gerarCampoHarmonico(tomBase, escalaBase, 0, formAcorde, tipoSetima);
+            for(let i=1; i<=7; i++) {
+                let txtElement = document.getElementById("btn-grau-" + i + "-cifra");
+                let btnElement = document.getElementById("btn-grau-" + i);
+                if(txtElement && btnElement && campoMagico[i]) {
+                    let qCifra = campoMagico[i].qCifra;
+                    let cifraBase = campoMagico[i].visual.split(" (")[0];
+                    txtElement.innerText = `(${cifraBase})`;
+
+                    btnElement.classList.remove('btn-maior', 'btn-menor', 'btn-dim');
+                    if (["", "7M", "7"].includes(qCifra)) { btnElement.classList.add('btn-maior'); }
+                    else if (["m", "m7"].includes(qCifra)) { btnElement.classList.add('btn-menor'); }
+                    else { btnElement.classList.add('btn-dim'); }
+                }
+            }
+        }
+
+        function printLog(texto) {
+            const consoleLog = document.getElementById('console-log');
+            consoleLog.innerHTML += `<span class="line">> ${texto}</span>`;
+            consoleLog.scrollTop = consoleLog.scrollHeight;
+        }
+
+        function limparHighlights() {
+            for (let i = 0; i <= 23; i++) { document.getElementById(`key-${i}`).classList.remove('active', 'root-active', 'seventh-active'); }
+            document.querySelectorAll('.guitar-note').forEach(el => el.classList.remove('active', 'root-active', 'seventh-active'));
+            document.querySelectorAll('.fret').forEach(el => el.classList.remove('fret-pestana', 'pestana-top', 'pestana-bottom'));
+            for(let s=0; s<6; s++) { document.getElementById('str-lbl-'+s).innerHTML = CONSTANTES.NOMES_CORDAS_VIOLAO[s]; }
+        }
+
+        function acenderTeclado(arrayIndices, rootValue, seventhValue) {
+            arrayIndices.forEach(idx => {
+                let el = document.getElementById(`key-${idx}`);
+                if (!el) return;
+                if (idx === rootValue) { el.classList.add('root-active'); }
+                else if (seventhValue !== null && idx === seventhValue) { el.classList.add('seventh-active'); }
+                else { el.classList.add('active'); }
+            });
+        }
+
+        function acenderViolao(arrayIndices, rootValue, seventhValue, qCifra) {
+            let rootBase = rootValue % 12; let seventhBase = seventhValue !== null ? seventhValue % 12 : null;
+            let otherBases = arrayIndices.map(x => x % 12).filter(x => x !== rootBase && x !== seventhBase);
+            let capoValue = parseInt(document.getElementById("capotraste").value);
+            let modoViolao = document.getElementById("modoViolao").value;
+            let playedPitches = [];
+
+            if (modoViolao === "shape" || modoViolao === "mini") {
+                let rootFret4 = -1, rootFret5 = -1, rootFret6 = -1;
+                for (let f = capoValue; f <= 12; f++) {
+                    if (rootFret6 === -1 && (4 + f) % 12 === rootBase) rootFret6 = f;
+                    if (rootFret5 === -1 && (9 + f) % 12 === rootBase) rootFret5 = f;
+                    if (rootFret4 === -1 && (2 + f) % 12 === rootBase) rootFret4 = f;
+                }
+
+                let shapeArr = null; let baseFret = -1;
+
+                if (modoViolao === "mini") {
+                    let candidates = [];
+                    if (rootFret6 !== -1 && CONSTANTES.SHAPES_MINI_6[qCifra]) candidates.push({f: rootFret6, s: CONSTANTES.SHAPES_MINI_6[qCifra]});
+                    if (rootFret4 !== -1 && CONSTANTES.SHAPES_MINI_4[qCifra]) candidates.push({f: rootFret4, s: CONSTANTES.SHAPES_MINI_4[qCifra]});
+                    candidates.sort((a, b) => a.f - b.f);
+                    if(candidates.length > 0) { baseFret = candidates[0].f; shapeArr = candidates[0].s; }
+                } else {
+                    let candidates = [];
+                    if (rootFret6 !== -1 && CONSTANTES.SHAPES_6[qCifra]) candidates.push({f: rootFret6, s: CONSTANTES.SHAPES_6[qCifra]});
+                    if (rootFret5 !== -1 && CONSTANTES.SHAPES_5[qCifra]) candidates.push({f: rootFret5, s: CONSTANTES.SHAPES_5[qCifra]});
+
+                    candidates.sort((a, b) => a.f - b.f);
+                    if(candidates.length > 0) { baseFret = candidates[0].f; shapeArr = candidates[0].s; }
+                }
+
+                let shapeNotes = [];
+                if (shapeArr) {
+                    for (let s = 0; s < 6; s++) {
+                        let offset = shapeArr[s];
+                        if (offset !== null) {
+                            let targetFret = baseFret + offset;
+                            if (targetFret >= capoValue && targetFret <= 12) {
+                                shapeNotes.push({ string: s, fret: targetFret });
+                                let absPitch = CONSTANTES.ABS_TUNING[s] + targetFret;
+                                playedPitches.push(absPitch);
+
+                                let el = document.getElementById(`g-note-${s}-${targetFret}`);
+                                if (el) {
+                                    let nIdx = parseInt(el.getAttribute('data-nota'));
+                                    if (nIdx === rootBase) el.classList.add('root-active');
+                                    else if (seventhBase !== null && nIdx === seventhBase) el.classList.add('seventh-active');
+                                    else el.classList.add('active');
+                                }
+                            }
+                        } else {
+                            document.getElementById('str-lbl-'+s).innerHTML = CONSTANTES.NOMES_CORDAS_VIOLAO[s] + ' <span class="mute-x">[X]</span>';
+                        }
+                    }
+
+                    if (modoViolao === "shape" && shapeNotes.length > 0) {
+                        let activeFrets = shapeNotes.map(n => n.fret).filter(f => f > capoValue);
+                        if (activeFrets.length > 0) {
+                            let minFret = Math.min(...activeFrets);
+                            let notesOnMinFret = shapeNotes.filter(n => n.fret === minFret);
+                            let activeStringsOnMinFret = notesOnMinFret.map(n => n.string);
+
+                            if (activeStringsOnMinFret.includes(0)) {
+                                let maxStrOnMinFret = Math.max(...activeStringsOnMinFret);
+                                if (maxStrOnMinFret >= 4) {
+                                    const corda6Topo = document.getElementById("inverterCordas").value === "corda6";
+                                    let renderOrder = corda6Topo ? [5, 4, 3, 2, 1, 0] : [0, 1, 2, 3, 4, 5];
+
+                                    for(let s = 0; s <= maxStrOnMinFret; s++) {
+                                        let fretEl = document.getElementById(`g-note-${s}-${minFret}`);
+                                        if(fretEl) {
+                                            let parentFret = fretEl.parentElement; parentFret.classList.add('fret-pestana');
+                                            let visualIndex = renderOrder.indexOf(s);
+                                            let minVisIdx = Math.min(...Array.from({length: maxStrOnMinFret + 1}, (_, i) => renderOrder.indexOf(i)));
+                                            let maxVisIdx = Math.max(...Array.from({length: maxStrOnMinFret + 1}, (_, i) => renderOrder.indexOf(i)));
+
+                                            if (visualIndex === minVisIdx) parentFret.classList.add('pestana-top');
+                                            if (visualIndex === maxVisIdx) parentFret.classList.add('pestana-bottom');
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else { renderizarAoE(rootBase, seventhBase, otherBases, capoValue); }
+            } else { renderizarAoE(rootBase, seventhBase, otherBases, capoValue); }
+
+            return playedPitches;
+        }
+
+        function renderizarAoE(rootBase, seventhBase, otherBases, capoValue) {
+            document.querySelectorAll('.guitar-note').forEach(el => {
+                let idParts = el.id.split('-'); let nFret = parseInt(idParts[2]);
+                if (nFret < capoValue) return;
+                let nIdx = parseInt(el.getAttribute('data-nota'));
+                if (nIdx === rootBase) el.classList.add('root-active');
+                else if (seventhBase !== null && nIdx === seventhBase) el.classList.add('seventh-active');
+                else if (otherBases.includes(nIdx)) el.classList.add('active');
+            });
+        }
+
+        function aoMudarConfigGlobal() {
+            atualizarInterface(); atualizarCapotraste(); atualizarBotoesLivres();
+            const isParaiso = document.getElementById('aba-paraiso').classList.contains('active');
+            if (isParaiso && ESTADO.ultimoGrauLivre > 0 && !ESTADO.rodando) { dispararGrauLivre(ESTADO.ultimoGrauLivre, true); }
+        }
+
+        async function dispararGrauLivre(grau, silent = false) {
+            if (!mobileDesbloqueado) { hackearAudioMobile(); }
+            ESTADO.ultimoGrauLivre = grau;
+
+            const tomBase = document.getElementById("tomFixo").value; const escalaBase = document.getElementById("escalaFixa").value;
+            const instVisual = document.getElementById("instVisual").value; const formAcorde = document.getElementById("formatoAcorde").value === "tetrade";
+            let tipoSetima = document.getElementById("tipoSetima").value; const vaiDitarNotas = document.getElementById("ditarNotas").value === "sim";
+            const modoReproducao = document.getElementById("modoReproducao").value;
+
+            if(tipoSetima === "ambas") tipoSetima = "diatonica";
+
+            let invSelecionada = (instVisual === "teclado" || instVisual === "ambos") ? parseInt(document.getElementById("inversaoTeclado").value) : 0;
+            let campoMagico = gerarCampoHarmonico(tomBase, escalaBase, invSelecionada, formAcorde, tipoSetima);
+            let dadosAcorde = campoMagico[grau];
+
+            printLog(`[TREINO LIVRE] Grau ${grau}: ${dadosAcorde.visual} | Notas: ${dadosAcorde.notasFinais}`);
+
+            limparHighlights();
+            acenderTeclado(dadosAcorde.indicesHitbox, dadosAcorde.rootHitbox, dadosAcorde.seventhHitbox);
+            let notasViolao = acenderViolao(dadosAcorde.indicesHitbox, dadosAcorde.rootHitbox, dadosAcorde.seventhHitbox, dadosAcorde.qCifra);
+
+            // SKILL: REPRODUÇÃO EM BLOCO OU ARPEJO
+            if (!silent) {
+                if (instVisual === "violao" && notasViolao && notasViolao.length > 0) {
+                    notasViolao.sort((a,b) => a - b);
+                    for(let p = 0; p < notasViolao.length; p++) {
+                        tocarViolao(notasViolao[p], null);
+                        if (modoReproducao === "arpejo") await sleep(60);
+                    }
+                } else {
+                    let absPitches = dadosAcorde.indicesHitbox.slice().sort((a,b) => a - b);
+                    for(let p = 0; p < absPitches.length; p++) {
+                        if (instVisual === "violao") tocarViolao(absPitches[p], null);
+                        else tocarTeclado(absPitches[p], null);
+                        if (modoReproducao === "arpejo") await sleep(80);
+                    }
+                }
+            }
+
+            if (!silent && vaiDitarNotas) {
+                window.speechSynthesis.cancel(); await falar(`${dadosAcorde.audio}. Notas: ${dadosAcorde.notasFinais}`, 1.2);
+            }
+        }
+
+        function ativarEIniciar() { if (!mobileDesbloqueado) hackearAudioMobile(); iniciarTreino(); }
+
+        async function bipar(tipo) {
+            try {
+                const modoSom = document.getElementById("somTick").value;
+                if (modoSom === "voz") {
+                    const synth = window.speechSynthesis; const utterThis = new SpeechSynthesisUtterance(tipo === "forte" ? "Pí" : "Pá");
+                    utterThis.lang = 'pt-BR'; utterThis.rate = 2.0; utterThis.volume = 1.0;
+                    utterThis.onend = () => {}; utterThis.onerror = () => {}; synth.speak(utterThis);
+                } else {
+                    if (!audioCtx) return; if (audioCtx.state === 'suspended') { audioCtx.resume(); }
+                    const oscillator = audioCtx.createOscillator(); const gainNode = audioCtx.createGain();
+                    if (modoSom === "mec") {
+                        oscillator.type = 'triangle'; oscillator.frequency.setValueAtTime(tipo === "forte" ? 1200 : 800, audioCtx.currentTime);
+                        oscillator.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.05); gainNode.gain.setValueAtTime(1.0, audioCtx.currentTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05); oscillator.connect(gainNode); gainNode.connect(audioCtx.destination);
+                        oscillator.start(audioCtx.currentTime); oscillator.stop(audioCtx.currentTime + 0.05);
+                    } else {
+                        oscillator.type = 'sine'; oscillator.frequency.setValueAtTime(tipo === "forte" ? 800 : 400, audioCtx.currentTime);
+                        gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+                        oscillator.connect(gainNode); gainNode.connect(audioCtx.destination); oscillator.start(audioCtx.currentTime); oscillator.stop(audioCtx.currentTime + 0.1);
+                    }
+                }
+                const hud = document.getElementById("hudMain");
+                if (tipo === "forte") { hud.style.borderColor = "var(--neon-magenta)"; hud.style.boxShadow = "0 0 30px var(--neon-magenta)"; }
+                else { hud.style.borderColor = "#ffffff"; hud.style.boxShadow = "0 0 20px #ffffff"; }
+                setTimeout(() => { hud.style.borderColor = "var(--neon-ciano)"; hud.style.boxShadow = "0 0 20px rgba(0, 255, 204, 0.5), inset 0 0 10px rgba(0, 255, 204, 0.2)"; }, 100);
+            } catch (err) { console.error("[bipar]", err); }
+        }
+
+        function falar(texto, velocidade = 1.3) {
+            return new Promise(resolve => {
+                try {
+                    const synth = window.speechSynthesis; const utterThis = new SpeechSynthesisUtterance(texto);
+                    utterThis.lang = 'pt-BR'; utterThis.rate = velocidade; utterThis.volume = 1.0;
+                    let resolvido = false; const safeResolve = () => { if (!resolvido) { resolvido = true; resolve(); } };
+                    utterThis.onend = safeResolve; utterThis.onerror = safeResolve;
+
+                    let checkInterval = setInterval(() => { if (!synth.speaking) { clearInterval(checkInterval); safeResolve(); } }, 500);
+                    setTimeout(() => { clearInterval(checkInterval); safeResolve(); }, 10000);
+                    synth.speak(utterThis);
+                } catch(e) { resolve(); }
+            });
+        }
+
+        const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+        class SacoDeGraus {
+            constructor() { this.saco = []; }
+            puxarGrau() {
+                if (this.saco.length === 0) { this.saco = [1, 2, 3, 4, 5, 6, 7]; for (let i = this.saco.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [this.saco[i], this.saco[j]] = [this.saco[j], this.saco[i]]; } }
+                return this.saco.pop();
+            }
+        }
+
+        function formatarCifraAcordeCompleta(nota_cifra, qualidade_cifra) { return nota_cifra.split("/").map(p => p + qualidade_cifra).join("/"); }
+        function formatarNomeAcordeCompleto(nota_cifra, qualidade_audio) { let nome_base = CONSTANTES.FALADOS_ACORDE[nota_cifra]; return nome_base.split(" ou ").map(p => p + " " + qualidade_audio).join(" ou "); }
+
+        function gerarCampoHarmonico(raiz, modo, inversao, usarSetima, tipoSetimaManual) {
+            let campo = {}; let idx_raiz = CONSTANTES.NOTAS.indexOf(raiz);
+            let intervalos = modo === "Maior" ? CONSTANTES.ESCALA_MAIOR : CONSTANTES.ESCALA_MENOR;
+
+            for (let i = 0; i < 7; i++) {
+                let idx_nota_atual = (idx_raiz + intervalos[i]) % 12; let nota_cifra = CONSTANTES.NOTAS[idx_nota_atual];
+                let terca, quinta, setima = null;
+                let q_cifra = modo === "Maior" ? CONSTANTES.Q_CIFRA_MAIOR[i] : CONSTANTES.Q_CIFRA_MENOR[i];
+                let q_audio = modo === "Maior" ? CONSTANTES.Q_AUDIO_MAIOR[i] : CONSTANTES.Q_AUDIO_MENOR[i];
+
+                if (q_cifra === "") { terca = 4; quinta = 7; }
+                else if (q_cifra === "m") { terca = 3; quinta = 7; }
+                else if (q_cifra === "dim") { terca = 3; quinta = 6; }
+
+                let regraAtual = tipoSetimaManual;
+                if (usarSetima && regraAtual === "ambas") { regraAtual = Math.random() > 0.5 ? "maior" : "menor"; }
+
+                if (usarSetima) {
+                    if (regraAtual === "diatonica") {
+                        q_cifra = CONSTANTES.TABELA_SETIMAS[modo].cifra[i];
+                        q_audio = CONSTANTES.TABELA_SETIMAS[modo].audio[i];
+                        setima = CONSTANTES.TABELA_SETIMAS[modo].offset[i];
+                    } else if (regraAtual === "maior") { setima = 11; q_cifra += "7M"; q_audio += " com sétima maior"; }
+                    else if (regraAtual === "menor") {
+                        if (q_cifra === "dim") { setima = 10; q_cifra = "m7b5"; q_audio = "Meio Diminuto"; } else { setima = 10; q_cifra += "7"; q_audio += " com sétima menor"; }
+                    }
+                }
+
+                let arr = [];
+                if (!usarSetima) {
+                    if (inversao === 0) { arr = [idx_nota_atual, idx_nota_atual + terca, idx_nota_atual + quinta]; }
+                    else if (inversao === 1) { arr = [idx_nota_atual + terca, idx_nota_atual + quinta, idx_nota_atual + 12]; }
+                    else if (inversao === 2) { arr = [idx_nota_atual + quinta, idx_nota_atual + 12, idx_nota_atual + terca + 12]; }
+                } else {
+                    if (inversao === 0) { arr = [idx_nota_atual, idx_nota_atual + terca, idx_nota_atual + quinta, idx_nota_atual + setima]; }
+                    else if (inversao === 1) { arr = [idx_nota_atual + terca, idx_nota_atual + quinta, idx_nota_atual + setima, idx_nota_atual + 12]; }
+                    else if (inversao === 2) { arr = [idx_nota_atual + quinta, idx_nota_atual + setima, idx_nota_atual + 12, idx_nota_atual + terca + 12]; }
+                    else if (inversao === 3) { arr = [idx_nota_atual + setima, idx_nota_atual + 12, idx_nota_atual + terca + 12, idx_nota_atual + quinta + 12]; }
+                }
+
+                while (Math.max(...arr) > 23) { arr = arr.map(val => val - 12); }
+                let textoNotasDic = arr.map(val => CONSTANTES.FALADOS_NOTAS[CONSTANTES.NOTAS[val % 12]]).join(", ").replace(/,([^,]*)$/, ' e$1');
+
+                let rootTarget = arr.find(val => val % 12 === idx_nota_atual);
+                let seventhTarget = usarSetima ? arr.find(val => val % 12 === (idx_nota_atual + setima) % 12) : null;
+
+                campo[i+1] = {
+                    visual: `${formatarCifraAcordeCompleta(nota_cifra, q_cifra)} (${formatarNomeAcordeCompleto(nota_cifra, q_audio)})`,
+                    visualCifra: formatarCifraAcordeCompleta(nota_cifra, q_cifra),
+                    qCifra: q_cifra, audio: formatarNomeAcordeCompleto(nota_cifra, q_audio),
+                    notasFinais: textoNotasDic, indicesHitbox: arr, rootHitbox: rootTarget, seventhHitbox: seventhTarget
+                };
+            }
+            return campo;
+        }
+
+        function travarUI(estado) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.disabled = estado); document.querySelectorAll('.free-roam-btn').forEach(b => b.disabled = estado);
+            document.getElementById("btnStart").disabled = estado; document.getElementById("btnStart").innerText = estado ? "SESSÃO EM ANDAMENTO..." : "INICIAR DESAFIO";
+        }
+
+        async function iniciarTreino() {
+            if (ESTADO.rodando) return;
+            ESTADO.rodando = true; travarUI(true); document.getElementById('console-log').innerHTML = ""; limparHighlights();
+
+            const modoRng = document.getElementById("modoRng").value; const tomFixo = document.getElementById("tomFixo").value;
+            const escalaFixa = document.getElementById("escalaFixa").value; const instVisual = document.getElementById("instVisual").value;
+            const formAcorde = document.getElementById("formatoAcorde").value === "tetrade"; const tipoSetima = document.getElementById("tipoSetima").value;
+
+            let invSelecionada = (instVisual === "teclado" || instVisual === "ambos") ? parseInt(document.getElementById("inversaoTeclado").value) : 0;
+            const vaiDitarNotas = document.getElementById("ditarNotas").value === "sim";
+            const bpm = parseInt(document.getElementById("bpm").value) || 80; const sessoes = parseInt(document.getElementById("sessoes").value) || 14;
+            let tonsFocados = Array.from(document.querySelectorAll('input[name="tomFocado"]:checked')).map(cb => cb.value);
+            const ordemFocado = document.getElementById("ordemFocado").value;
+            const modoReproducao = document.getElementById("modoReproducao").value;
+
+            if (modoRng === "focado" && tonsFocados.length === 0) tonsFocados = [tomFixo];
+
+            const tempoEsperaMs = (60.0 / bpm) * 1000;
+            printLog("==== INÍCIO DO DESAFIO ====");
+            let saco = new SacoDeGraus(); let tomAtual, escalaAtual, tomAnterior = "", escalaAnterior = "";
+            let beatProgress = document.getElementById('beat-progress');
+
+            try {
+                for (let i = 0; i < sessoes; i++) {
+                    if (modoRng === "desligado") { tomAtual = tomFixo; escalaAtual = escalaFixa; }
+                    else if (modoRng === "focado") { escalaAtual = escalaFixa; tomAtual = ordemFocado === "sequencial" ? tonsFocados[i % tonsFocados.length] : tonsFocados[Math.floor(Math.random() * tonsFocados.length)]; }
+                    else { tomAtual = CONSTANTES.NOTAS[Math.floor(Math.random() * CONSTANTES.NOTAS.length)]; escalaAtual = modoRng === "maior" ? "Maior" : modoRng === "menor" ? "Menor" : (Math.random() < 0.5 ? "Maior" : "Menor"); }
+
+                    if (i === 0) {
+                        printLog(`> Iniciando em ${formatarNomeAcordeCompleto(tomAtual, escalaAtual)}.`);
+                        await falar(`Iniciando em ${formatarNomeAcordeCompleto(tomAtual, escalaAtual)}.`, 1.3);
+                    } else if (tomAtual !== tomAnterior || escalaAtual !== escalaAnterior) {
+                        printLog(`[TROCA DE TOM] ${formatarNomeAcordeCompleto(tomAtual, escalaAtual)}.`);
+                        await falar(`Mudando para ${formatarNomeAcordeCompleto(tomAtual, escalaAtual)}.`, 1.3);
+                    }
+                    tomAnterior = tomAtual; escalaAnterior = escalaAtual;
+
+                    printLog(`<br>--- Rodada ${i+1}/${sessoes} ---`);
+                    let campoAtual = gerarCampoHarmonico(tomAtual, escalaAtual, invSelecionada, formAcorde, tipoSetima);
+                    let grauSorteado = saco.puxarGrau(); let dadosAcorde = campoAtual[grauSorteado];
+
+                    printLog(`Tocando GRAU ${grauSorteado}`); await falar(`Rodada ${i+1}. Grau ${grauSorteado}`, 1.3); await sleep(400);
+
+                    for (let t = 0; t < 4; t++) {
+                        beatProgress.style.width = `${((t + 1) / 4) * 100}%`;
+                        await bipar(t === 0 ? "forte" : "fraco");
+                        await sleep(tempoEsperaMs);
+                    }
+                    beatProgress.style.width = `0%`;
+
+                    acenderTeclado(dadosAcorde.indicesHitbox, dadosAcorde.rootHitbox, dadosAcorde.seventhHitbox);
+                    let notasViolao = acenderViolao(dadosAcorde.indicesHitbox, dadosAcorde.rootHitbox, dadosAcorde.seventhHitbox, dadosAcorde.qCifra);
+
+                    if (instVisual === "violao" && notasViolao && notasViolao.length > 0) {
+                        notasViolao.sort((a,b) => a - b);
+                        for(let p = 0; p < notasViolao.length; p++) {
+                            tocarViolao(notasViolao[p], null);
+                            if (modoReproducao === "arpejo") await sleep(60);
+                        }
+                    } else {
+                        let absPitches = dadosAcorde.indicesHitbox.slice().sort((a,b) => a - b);
+                        for(let p = 0; p < absPitches.length; p++) {
+                            if (instVisual === "violao") tocarViolao(absPitches[p], null);
+                            else tocarTeclado(absPitches[p], null);
+                            if (modoReproducao === "arpejo") await sleep(80);
+                        }
+                    }
+
+                    printLog(`Acorde: ${dadosAcorde.visual}`); await falar(`O acorde é ${dadosAcorde.audio}`, 1.3);
+                    if (vaiDitarNotas) { printLog(`Notas: ${dadosAcorde.notasFinais}`); await sleep(300); await falar(`As notas são: ${dadosAcorde.notasFinais}`, 0.8); }
+
+                    limparHighlights(); await sleep(1000);
+                }
+                printLog("<br>==== FIM DO DESAFIO ====");
+            } catch(e) { printLog("[ERRO] A sessão foi interrompida."); } finally { travarUI(false); ESTADO.rodando = false; beatProgress.style.width = `0%`; }
+        }
+    </script>
+</body>
+</html>
