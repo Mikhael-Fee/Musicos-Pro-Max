@@ -1,5 +1,18 @@
 # Histórico
 
+## 2.0.0 — 16/10/2026
+
+- Interface refeita com três modos, configuração principal curta e ajustes recolhidos. Escolha de acorde, botão de som e instrumentos juntos, com comparação lado a lado no computador.
+- Violão como padrão; posições abertas usuais antes de formas móveis, diagramas convencionais, dedilhados documentados e indicação de pestanas. Posição compacta e mapa completo como alternativas explícitas.
+- Escalas no violão com posição inicial, referências móveis na sexta/quinta corda e reprodução de uma oitava com marcação sincronizada.
+- Comparação de intervalos com referência fixa, opções que tocam e são marcadas antes de confirmar, distâncias em tons/semitons e resposta correta demonstrada.
+- “Monte o acorde” nos dois instrumentos; uma casa por corda no violão, validação das notas e dos limites da posição.
+- 19 tipos de acorde, incluindo 7, 9, 11, 13, sus2, sus4, 6 e add9; omissões de voicing informadas.
+- Treino guiado com modelo visível/sonoro desde o início, quatro tempos, passagem manual por padrão, modo automático e repetição.
+- Progressões gospel/worship, incluindo 4–5–6–3 como padrão, transposição e tríades/sétimas.
+- Preservação dos totais anteriores; testes de teoria, voicings, áudio, progressões e geometria da interface móvel/desktop.
+- Remoção dos arquivos de interface e lógica herdados que deixaram de ser usados.
+
 ## 1.0.0 — 16/10/2026
 
 - Interface com menos brilho, controles legíveis, foco visível e suporte a movimento reduzido.

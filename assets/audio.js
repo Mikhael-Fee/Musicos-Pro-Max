@@ -79,6 +79,16 @@
         });
       }
     }
+    tick(accent = false) {
+      const ctx = this.init(), source = ctx.createOscillator(), gain = ctx.createGain();
+      const at = ctx.currentTime;
+      source.frequency.setValueAtTime(accent ? 1100 : 720, at);
+      gain.gain.setValueAtTime(0, at);
+      gain.gain.linearRampToValueAtTime(.22, at + .002);
+      gain.gain.exponentialRampToValueAtTime(.0001, at + .06);
+      source.connect(gain).connect(this.master); this.track(source, [gain]);
+      source.start(at); source.stop(at + .07);
+    }
     stop() {
       if (!this.context) return;
       this.master.gain.cancelScheduledValues(this.context.currentTime);

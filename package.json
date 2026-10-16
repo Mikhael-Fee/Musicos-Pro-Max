@@ -1,6 +1,6 @@
 {
   "name": "musicos-pro-max",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
   "description": "Estúdio estático de prática musical para teclado e violão",
   "scripts": {

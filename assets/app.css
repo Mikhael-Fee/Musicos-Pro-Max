@@ -1,5 +1,283 @@
-:root{--neon-ciano:#80ddbb;--neon-magenta:#b9a4ff;--neon-amarelo:#f0cd7b;--neon-laranja:#edac80;--bg-escuro:#10131c;--bg-painel:#191e2a;--bg-alerta:#ff8c98;color-scheme:dark;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:24px}body{background:#10131c;background-image:radial-gradient(ellipse at 70% 0,rgba(112,92,185,.12),transparent 55%);color:#e8eaf2;font-family:inherit;padding:0 32px 24px;line-height:1.5;min-width:320px}button,input,select{font:inherit}button,a,select,input{touch-action:manipulation}button{border:1px solid #424a60;background:#252c3c;color:#e8eaf2;border-radius:9px;padding:10px 14px;cursor:pointer;transition:background .15s}button:hover{background:#343d51}button:disabled{opacity:.45;cursor:not-allowed}button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible,[role=button]:focus-visible,summary:focus-visible{outline:3px solid #80ddbb;outline-offset:4px;box-shadow:none}a{color:inherit;text-decoration:none}h1,h2,h3,p{margin-top:0}h2{font-size:22px;margin-bottom:6px;letter-spacing:-.5px}h3{font-size:19px;line-height:1.5}label{color:#bac2d5;font-size:12px;text-transform:none;letter-spacing:0;text-shadow:none;font-weight:500;margin-bottom:5px}input[type=number],select{background:#111620;border:1px solid #3b445a;color:#ecedf5;border-radius:8px;min-height:43px;padding:9px 10px;font-family:inherit;font-size:13px;box-shadow:none}input:focus,select:focus{box-shadow:none}input[type=range]{width:100%;accent-color:var(--neon-ciano)}
-.app-header{width:100%;max-width:1320px;display:flex;align-items:center;justify-content:space-between;gap:20px;border-bottom:1px solid #2a3041;padding:22px 0}.brand{display:flex;align-items:center;font-weight:800;font-size:28px;letter-spacing:-3px}.brand span{color:var(--neon-ciano)}.brand small{letter-spacing:2px;font-size:10px;margin-left:16px;font-weight:600}.app-header nav{display:flex;gap:28px;font-size:13px;color:#b9c0d0}.app-header nav a:hover{color:var(--neon-ciano)}.version{font-size:11px;color:#929db4}.intro{max-width:1320px;width:100%;padding:46px 0 34px}.eyebrow{font-size:10px;font-weight:700;letter-spacing:1.8px;color:var(--neon-ciano);margin-bottom:12px}.intro h1{font-size:clamp(32px,4vw,50px);line-height:1.15;font-weight:600;text-align:left;text-shadow:none;text-transform:none;letter-spacing:-2px;color:#f4f5f9;margin:0 0 17px}.intro h1 span{color:#a9a0d4}.intro>p:last-child{color:#9da8bf;font-size:14px;margin:0}.main-layout{max-width:1320px;gap:24px;align-items:flex-start}.hud-container{border:1px solid #343b4e;box-shadow:none;backdrop-filter:none;max-width:none;flex:0 0 365px;border-radius:15px;position:relative}.hud-padding{padding:20px;margin:0}.side-panel{position:static;max-width:none;flex:1;min-width:0;width:100%;display:flex;flex-direction:column;gap:18px}.tab-header{border-bottom:1px solid #343b4e;background:transparent}.tab-btn{border-radius:0;font-family:inherit;text-transform:none;font-size:13px;padding:16px;color:#9ba5bd;box-shadow:none}.tab-btn.active{background:#b9a4ff0a;color:var(--neon-ciano);text-shadow:none;border-bottom:2px solid var(--neon-ciano)}.config-group{background:transparent;border:0;border-bottom:1px solid #303749;border-radius:0;padding:0 0 20px;margin-bottom:20px}.group-title{font-size:10px;border:0;letter-spacing:1.6px;color:#929db4;margin-bottom:14px}.grid-2-col{gap:12px}.free-roam-grid{grid-template-columns:repeat(3,1fr);gap:8px}.free-roam-btn{font-size:12px;box-shadow:none!important;background:#202737;min-height:64px;text-transform:none;border-color:#424a60!important;color:#e6e9f2}.free-roam-btn span{font-size:15px}.free-roam-btn:hover{background:#343d51!important;color:#fff!important}.btn-g7{grid-column:auto}.free-roam-btn.selected{border-color:var(--neon-ciano)!important;background:#80ddbb12}.run-btn,button.run-btn:hover{background:var(--neon-ciano);color:#101b19;box-shadow:none;text-transform:none;font-size:14px;border-radius:8px}.practice-card{background:linear-gradient(140deg,#202536,#191e2a);border:1px solid #41475f;border-radius:15px;padding:24px}.section-heading{display:flex;justify-content:space-between;gap:12px;align-items:center}.pill{border:1px solid #4a506a;color:#c7cce0;border-radius:20px;font-size:11px;padding:5px 10px;white-space:nowrap}.muted{font-size:12px;color:#a7b1c6;line-height:1.7}.practice-card>.grid-2-col{margin:18px 0 8px}.session-progress{display:flex;gap:14px;align-items:center;margin:20px 0 12px;color:#a7b1c6;font-size:11px}.session-progress progress{flex:1;max-width:200px;height:6px;accent-color:var(--neon-ciano)}#question{font-size:20px;font-weight:550;margin-bottom:14px}.answers{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.answers button{min-height:44px}.answers button.correct{border-color:var(--neon-ciano);color:var(--neon-ciano);background:#80ddbb18}.answers button.incorrect{border-color:#ff8c98;color:#ffb2bb;background:#ff8c9815}#feedback{font-size:13px;color:#cfdbed;min-height:22px;margin:14px 0}.actions{display:flex;flex-wrap:wrap;gap:8px}.primary{background:var(--neon-ciano);border-color:transparent;color:#101b19;font-weight:650}.primary:hover{background:#a1ebd0}[hidden]{display:none!important}#practice-stats{border-top:1px solid #394052;padding-top:14px;margin:18px 0 0}.explorer-tools{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end}.explorer-tools button{font-size:12px;min-height:43px}.selection-summary{color:#c0c9dd;font-size:13px;min-height:24px}.selection-summary strong{color:#fff}.selection-summary .swatch{display:inline-block;width:8px;height:8px;border-radius:50%;margin:0 5px 0 12px}.piano-wrapper,.guitar-wrapper{box-shadow:none;border:1px solid #3b4359;border-radius:12px;padding:16px;background:#191e2a;overflow-x:auto;overflow-y:hidden}.piano-wrapper>label,.guitar-wrapper>label{font-size:11px!important;text-align:left!important;color:#c8cfe1!important;margin-bottom:14px!important}.piano-container{height:150px;min-width:570px;border-radius:5px}.key-white,.key-black{transition:background .12s;user-select:none}.key-white{border-color:#797b85;background:linear-gradient(#f7f7fa,#dce0e9);padding-bottom:10px}.key-black{background:linear-gradient(#323747,#11151e);height:63%;box-shadow:inset 0 -4px 2px #0008}.piano-key-label{font-weight:600;font-size:10px;line-height:1.3;text-shadow:none}.key-black .piano-key-label{color:#e1e4ef}.key-white.active,.key-black.active,.key-white.root-active,.key-black.root-active,.key-white.seventh-active,.key-black.seventh-active{box-shadow:none;border-color:#222!important}.key-white.root-active .piano-key-label,.key-white.seventh-active .piano-key-label{color:#151520}.key-black.root-active .piano-key-label{color:#151520}.fretboard-container{min-width:610px;background:#252a37;border-color:#4a5268}.guitar-wrapper{background:#191e2a}.guitar-string{height:36px}.guitar-note{width:25px;height:25px;font-size:10px;border-color:transparent;background:#363e50;opacity:.42;color:#cbd4e8;box-shadow:none!important}.guitar-note.active,.guitar-note.root-active,.guitar-note.seventh-active{opacity:1;color:#10131c;border:1px solid #141820}.guitar-note:not(.active):not(.root-active):not(.seventh-active){opacity:.3}.guitar-note:hover,.guitar-note:focus-visible{opacity:1!important;transform:scale(1.15)}.fret{border-right-color:#687187}.fret.nut{background:#151923;border-right-color:#ced3e0}.string-line{background:#a3acbf;height:1px;box-shadow:none}.fret-dots,.fret-labels{min-width:610px}.fret-label{font-size:10px;color:#b1bdd3}.string-label{font-size:10px;min-width:32px;color:#d0d7e6}#fretboard-render>div{min-width:650px}.history{border:1px solid #333c50;border-radius:10px;overflow:hidden}summary{padding:12px 16px;font-size:12px;cursor:pointer;color:#b7c2d8}#console-log{height:170px;border:0;border-top:1px solid #333c50;border-radius:0;box-shadow:none;font-family:inherit;font-size:12px;color:#a7b9cf;background:#141923;text-shadow:none}.progress-bar{box-shadow:none}.progress-wrapper{background:transparent}#painelInversao,#painelViolao,#painelRegraSetima,#painelFocado{border-color:#41475c;background:#202536;margin-bottom:15px}.checkbox-grid label{font-size:11px}.audio-controls{padding:12px;background:#121722;border-radius:8px;margin-top:12px}.audio-controls .actions{justify-content:space-between;align-items:center}.audio-controls button{font-size:11px;padding:6px 10px}footer{max-width:1320px;width:100%;margin-top:40px;padding:20px 0;border-top:1px solid #2a3041;color:#929db4;font-size:11px;display:flex;align-items:center;justify-content:space-between;gap:16px}footer button{font-size:11px}.click-fx-piano,.click-fx-guitar{box-shadow:none!important;transform:translateY(2px)!important}#audio-status{font-size:11px;color:#a7b1c6}body.locating .guitar-note,body.locating .piano-key-label{color:transparent!important}body.locating .guitar-note{opacity:.55!important;background:#455069!important}body.locating .key-white,body.locating .key-black{box-shadow:none!important}body.locating .selection-summary{visibility:hidden}
-@media(min-width:950px){.main-layout{flex-direction:row}.hud-container{width:365px}.side-panel{gap:18px}}@media(max-width:1050px) and (min-width:950px){.hud-container{flex-basis:320px;width:320px}.explorer-tools{grid-template-columns:1fr 1fr}.explorer-tools button{grid-column:span 2}}@media(max-width:949px){body{padding:0 18px 20px}.main-layout{flex-direction:column;gap:20px}.hud-container{flex:auto;width:100%;max-width:none}.intro{padding:30px 0}.side-panel{width:100%}.version{display:none}.free-roam-grid{grid-template-columns:repeat(4,1fr)}.app-header nav{gap:16px}.intro h1{letter-spacing:-1px}.hud-padding{padding:18px}}@media(max-width:550px){body{padding:0 12px 16px}.brand small{font-size:8px;letter-spacing:1px;margin-left:12px}.app-header{gap:10px}.app-header nav{font-size:12px;gap:12px}.eyebrow{font-size:9px;letter-spacing:1.2px}.intro>p:last-child{font-size:13px}.practice-card{padding:18px}.section-heading{align-items:flex-start}h2{font-size:20px}.answers{grid-template-columns:repeat(2,1fr)}.explorer-tools{grid-template-columns:1fr 1fr;gap:8px}.explorer-tools button{grid-column:span 2}.piano-wrapper,.guitar-wrapper{padding:12px}.free-roam-grid{grid-template-columns:repeat(3,1fr)}.selection-summary{font-size:12px}footer{align-items:flex-start;flex-direction:column}.pill{font-size:10px}}
-@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+:root{color-scheme:dark;--bg:#11151f;--panel:#1b2130;--surface:#141a26;--line:#394259;--text:#edf0f8;--muted:#aebad0;--mint:#87dfbe;--lilac:#bfadff;--orange:#ffd18c;--rose:#ffabb5;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at 90% 0,#30264933,transparent 55%),var(--bg);color:var(--text);line-height:1.5}
+button,input,select{font:inherit}
+button{cursor:pointer;touch-action:manipulation;color:var(--text);border:1px solid var(--line);background:#272f42;padding:10px 13px;border-radius:9px;line-height:1.25;font-size:13px;transition:background .1s}
+button:hover{background:#35415a}
+button:disabled{opacity:.42;cursor:default}
+button.primary{color:#10231c;background:var(--mint);border-color:var(--mint);font-weight:650}
+button.primary:hover{background:#aff0d5}
+button.subtle{padding:6px 9px;background:transparent;color:var(--muted);font-size:11px}
+button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible,summary:focus-visible,[role=button]:focus-visible{outline:3px solid var(--orange);outline-offset:3px}
+a{color:var(--mint);text-decoration:none}
+[hidden]{display:none!important}
+h1,h2,h3,p{margin:0}
+h1{font-size:22px;letter-spacing:-.7px;line-height:1.25;margin-bottom:18px}
+h2{font-size:23px;line-height:1.25;letter-spacing:-.5px}
+h3{font-size:13px;font-weight:600}
+label{display:flex;flex-direction:column;gap:6px;font-size:11px;color:var(--muted);margin-bottom:14px}
+select,input[type=number]{width:100%;min-height:40px;background:#111722;border:1px solid var(--line);border-radius:8px;color:var(--text);padding:8px 10px;font-size:13px}
+input[type=range]{width:100%;accent-color:var(--mint)}
+.check{display:flex;flex-direction:row;align-items:center;gap:10px;font-size:12px;color:var(--text)}
+.check input{accent-color:var(--mint);width:17px;height:17px;flex-shrink:0}
+summary{cursor:pointer;color:var(--muted);font-size:12px}
+.muted{color:var(--muted);font-size:12px;line-height:1.65}
+.eyebrow{font-size:9px;font-weight:700;color:var(--mint);letter-spacing:1.8px;margin-bottom:7px}
+.app-header{max-width:1240px;margin:auto;padding:18px 22px;display:flex;align-items:center;gap:18px;border-bottom:1px solid #2c3346}
+.brand{display:flex;align-items:center;font-size:27px;font-weight:800;letter-spacing:-3px;color:var(--text)}
+.brand span{color:var(--mint)}
+.brand b{font-size:9px;letter-spacing:1.6px;margin-left:16px}
+.header-note{margin-left:auto;font-size:12px;color:var(--muted)}
+.version{font-size:10px;border:1px solid var(--line);border-radius:20px;color:var(--muted);padding:3px 8px}
+main{max-width:1240px;padding:20px 22px 0;margin:auto}
+.mode-tabs{display:flex;gap:6px;margin-bottom:16px}
+.mode-tabs button{background:transparent;border-color:transparent;padding:10px 18px;font-size:14px;color:var(--muted)}
+.mode-tabs button[aria-pressed=true]{background:#87dfbe14;color:var(--mint);border-color:#87dfbe66}
+.toolbar{display:flex;align-items:end;gap:12px;background:var(--panel);border:1px solid var(--line);padding:12px 16px;border-radius:12px;margin-bottom:16px}
+.toolbar>label{margin:0;flex:1;max-width:250px}
+.toolbar>details{margin-left:auto;position:relative;align-self:center}
+.toolbar summary{padding:12px;list-style:none;border:1px solid var(--line);border-radius:8px}
+.toolbar summary::before{content:'⚙ ';color:var(--mint)}
+.settings-panel{position:absolute;right:0;top:55px;width:280px;background:#20283a;border:1px solid #4c5871;box-shadow:0 20px 60px #0008;border-radius:12px;padding:18px;z-index:30}
+.workspace{display:grid;grid-template-columns:280px minmax(0,1fr);gap:16px;align-items:start}
+.lesson-panel{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:20px;position:sticky;top:16px}
+.lesson-panel>.muted{margin:14px 0}
+.learn-more{border-top:1px solid var(--line);margin-top:18px;padding-top:12px}
+.learn-more p{font-size:12px;color:var(--muted);margin-top:12px}
+.instrument-stage{border:1px solid var(--line);border-radius:12px;background:linear-gradient(140deg,#1f2637,#181e2b);padding:20px;min-width:0}
+.stage-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}
+.stage-heading>div{min-width:0}
+.stage-heading h2{font-size:26px}
+.stage-heading .eyebrow{margin-bottom:4px}
+.stage-heading>button{white-space:nowrap}
+.chord-palette{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:12px}
+.chord-palette button{padding:9px 3px;min-width:0;background:#202839;border-color:#414d65;display:flex;flex-direction:column;gap:3px}
+.chord-palette button strong{font-size:16px;color:var(--text);font-weight:650}
+.chord-palette button small{font-size:9px;color:var(--muted)}
+.chord-palette button[aria-pressed=true]{background:#87dfbe15;border-color:var(--mint)}
+.chord-palette button[aria-pressed=true] strong{color:var(--mint)}
+.note-palette{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.note-palette button{padding:5px 9px;display:flex;gap:6px;align-items:baseline;background:#151c2b}
+.note-palette button b{font-size:12px;font-weight:550}
+.note-palette button small{color:var(--muted);font-size:9px}
+.note-palette button[aria-pressed=true]{border-color:var(--orange);color:var(--orange)}
+.scene-description{font-size:11px;color:var(--muted);line-height:1.6;margin:6px 0 14px}
+#instrument-controls{display:flex;align-items:end;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+#instrument-controls label{margin:0;min-width:140px;max-width:210px;flex:1}
+#instrument-controls select{min-height:34px;font-size:11px;padding:6px 8px}
+.legend{font-size:9px;color:var(--muted);margin:0 0 8px auto;white-space:nowrap}
+.legend i{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--lilac);margin:0 4px 0 8px}
+.legend i:nth-of-type(2){background:var(--mint)}
+.legend i:nth-of-type(3){background:var(--orange)}
+.instrument-panel{background:#121925;border:1px solid #3c475f;border-radius:10px;padding:12px;margin-bottom:10px;min-width:0}
+.instrument-caption{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-bottom:8px}
+.instrument-caption span{font-size:9px;color:var(--muted)}
+.instrument-description{font-size:11px;color:#b8c4d9;line-height:1.6;margin-top:8px}
+.live-note{font-size:12px;color:var(--orange);min-height:22px;margin-top:10px}
+#audio-status{font-size:11px;color:var(--rose)}
+.diagram-layout{display:flex;align-items:center;justify-content:center;gap:24px}
+.chord-diagram{max-height:215px;width:200px;flex:0 0 200px;overflow:visible}
+.chord-diagram line{stroke:#7d8aa4;stroke-width:1}
+.chord-diagram .nut{stroke:#cbd3e5;stroke-width:4}
+.chord-diagram text{font-family:inherit;text-anchor:middle;fill:#bac7dd;font-size:10px}
+.chord-diagram .note-circle{fill:var(--mint)}
+.chord-diagram .root .note-circle{fill:var(--lilac)}
+.chord-diagram .chosen .note-circle{fill:var(--orange);stroke:white;stroke-width:2}
+.chord-diagram .dot-label{fill:#101620;font-size:10px;font-weight:700;pointer-events:none}
+.chord-diagram [role=button]{cursor:pointer}
+.chord-diagram [role=button]:hover .note-circle{stroke:var(--orange);stroke-width:2}
+.voicing-info{font-size:12px;max-width:240px;color:var(--muted)}
+.voicing-info strong{color:var(--text);display:block;font-size:14px;margin-bottom:8px}
+.string-recipe{display:flex;flex-wrap:wrap;gap:5px;margin:10px 0}
+.string-recipe span{background:#273047;padding:4px 7px;border-radius:5px;font:12px ui-monospace,monospace;color:var(--text)}
+.guitar-scroll{overflow-x:auto;padding:3px 1px 8px;scrollbar-color:#56627c #171e2c}
+.fretboard{display:grid;grid-template-columns:28px repeat(var(--frets),minmax(42px,1fr));position:relative;min-width:var(--board-min);gap:0}
+.string-name{font-size:10px;color:#aebed7;align-self:center;text-align:center}
+.fret-cell{background:linear-gradient(transparent calc(50% - .5px),#6e7a93 calc(50% - .5px),#6e7a93 calc(50% + .5px),transparent calc(50% + .5px)),#252c3b;border-right:2px solid #66718a;position:relative;height:34px;display:flex;align-items:center;justify-content:center}
+.fret-cell.nut{background-color:#151d2b;border-right:4px solid #c0c9da}
+.fret-cell button{width:25px;height:25px;padding:0;border-radius:50%;border:1px solid transparent;background:#414c6338;color:#9faec766;font-size:10px;position:relative;z-index:1;line-height:1;font-weight:600}
+.fret-cell button.active{background:var(--mint);color:#101b1a}
+.fret-cell button.root{background:var(--lilac);color:#101b1a}
+.fret-cell button.chosen{background:var(--orange);color:#201911;border:2px solid #fff}
+.fret-cell button:hover{border-color:var(--orange);color:#e6edf8}
+.fret-cell button.active:hover,.fret-cell button.root:hover{color:#11151f}
+.fret-number{font-size:9px;color:#b6c4da;text-align:center;margin-top:5px}
+.fret-number.marker{color:var(--orange)}
+.piano-scroll{overflow-x:auto;scrollbar-color:#56627c #171e2c}
+#piano-render{height:133px;display:flex;position:relative;min-width:var(--piano-min);gap:0;border-radius:4px;overflow:hidden}
+#piano-render button{padding:0;border-radius:0 0 4px 4px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:8px;font-size:10px;border:1px solid #6b758c;position:relative;line-height:1;flex-shrink:0;font-weight:650}
+#piano-render .white{height:100%;background:linear-gradient(#f6f7fc,#d9dfec);color:#364052;z-index:1}
+#piano-render .black{height:62%;background:linear-gradient(#3a4357,#0c121f);color:#c8d3e7;position:absolute;z-index:2;border-color:#0b101c}
+#piano-render button.active{background:var(--mint);color:#122119}
+#piano-render button.root{background:var(--lilac);color:#16152a}
+#piano-render button.chosen{background:var(--orange);color:#22180d;box-shadow:inset 0 -5px 0 #fff}
+.session-top{display:flex;gap:8px;justify-content:space-between;align-items:center;color:var(--muted);font-size:10px}
+progress{accent-color:var(--mint);height:5px;width:100%;margin:10px 0 18px}
+#question{font-size:21px;margin-bottom:8px}
+#question-help{font-size:11px;margin-bottom:14px}
+.answers{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px}
+.answers button{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;padding:9px;font-size:12px}
+.answers button small{font-size:9px;color:var(--muted)}
+.answers button[aria-pressed=true]{border-color:var(--orange);color:var(--orange);background:#ffd18c0e}
+.answers button.correct{border-color:var(--mint);color:var(--mint)}
+.answers button.wrong{border-color:var(--rose);color:var(--rose)}
+.actions{display:flex;gap:7px;flex-wrap:wrap}
+.actions button{font-size:11px;padding:9px 10px}
+#feedback{font-size:12px;color:#d9e6f6;line-height:1.6;margin-top:12px}
+.stats{border-top:1px solid var(--line);padding-top:12px;margin-top:18px;font-size:10px;color:var(--muted)}
+#guided-session h2{margin:14px 0 8px}
+#guided-phase{font-size:13px;color:var(--muted);min-height:54px}
+.pill{font-size:10px;border:1px solid #536079;border-radius:20px;padding:4px 9px;color:var(--muted)}
+#beats{display:flex;gap:8px;margin:18px 0}
+#beats i{display:flex;align-items:center;justify-content:center;width:34px;height:34px;background:#29344a;border:1px solid #506079;border-radius:50%;font-size:12px;font-style:normal;color:#bfcee4}
+#beats i.active{background:var(--mint);color:#142319;border-color:#c9ffe8}
+footer{display:flex;align-items:center;gap:12px;padding:22px 0;margin-top:20px;border-top:1px solid #2e374a;font-size:10px;color:var(--muted)}
+footer span{margin-right:auto}
+#guide-link{font-size:10px}
+.answer-selection{border:1px dashed #b99a65;padding:8px 10px;border-radius:8px;font-size:12px}
+.no-shape{padding:24px;text-align:center;color:var(--muted);font-size:12px}
+
+@media(max-width:1000px){.workspace{grid-template-columns:240px minmax(0,1fr)}
+.lesson-panel{padding:16px}
+.instrument-stage{padding:16px}
+.diagram-layout{gap:10px}
+.chord-diagram{width:170px;flex-basis:170px}
+.voicing-info{font-size:11px}
+.legend{width:100%;margin:0}
+.toolbar>label{max-width:none}
+.stage-heading h2{font-size:23px}
+.chord-palette button strong{font-size:13px}
+}
+
+@media(max-width:720px){.app-header{padding:12px 14px}
+.brand{font-size:24px}
+.brand b{font-size:8px;letter-spacing:1px;margin-left:12px}
+.header-note{display:none}
+.version{margin-left:auto}
+main{padding:12px 10px 0}
+.mode-tabs{margin-bottom:10px;gap:3px}
+.mode-tabs button{flex:1;padding:10px 6px;font-size:12px}
+.toolbar{padding:10px;gap:7px;margin-bottom:10px}
+.toolbar>label{font-size:9px;gap:4px;min-width:0}
+.toolbar select{font-size:11px;padding:7px 5px;min-height:35px}
+.toolbar summary{font-size:0;padding:8px}
+.toolbar summary::before{font-size:16px;content:'⚙'}
+.settings-panel{right:0;top:45px;width:265px}
+.workspace{display:flex;flex-direction:column;gap:10px}
+.lesson-panel{position:static;width:100%;padding:12px}
+.lesson-panel h1{font-size:17px;margin-bottom:10px}
+.lesson-panel label{margin-bottom:8px}
+.lesson-panel>.section-title{display:none}
+#explore-panel{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#explore-panel label{margin:0}
+#explore-help{grid-column:span 2;font-size:10px;margin:0}
+#explore-panel .learn-more{grid-column:span 2;margin:0;padding-top:8px}
+.learn-more summary{font-size:10px}
+.learn-more p{font-size:11px}
+#practice-setup{display:grid;grid-template-columns:1fr auto;column-gap:8px;align-items:end}
+#practice-setup h1,#practice-setup>.eyebrow{display:none}
+#practice-setup>label{grid-column:1}
+#practice-setup>.muted{grid-column:span 2;font-size:10px;margin:0}
+#practice-setup>.primary{grid-row:1;grid-column:2;padding:9px;font-size:11px;height:38px;margin-bottom:8px}
+#practice-session{display:grid;grid-template-columns:1fr auto;gap:4px 8px}
+#practice-session progress{grid-column:span 2;margin:2px 0 6px}
+#practice-session>.session-top,#question-category,#question,#question-help,#answers,#feedback{grid-column:span 2}
+#question-category{display:none}
+#question{font-size:18px;margin:0}
+#question-help{font-size:10px;margin:0 0 5px}
+#answers{grid-template-columns:repeat(3,1fr);gap:4px;margin:0 0 5px}
+.answers button{padding:7px;font-size:10px}
+.answers button small{font-size:8px}
+#answer-actions{grid-column:span 2}
+#feedback{font-size:11px;margin:4px 0 0}
+.stats{margin:8px 0 0;padding-top:7px;font-size:9px}
+.instrument-stage{padding:12px;width:100%}
+.stage-heading{margin-bottom:8px}
+.stage-heading h2{font-size:21px}
+.stage-heading>button{padding:9px 12px;font-size:12px}
+.eyebrow{font-size:8px;letter-spacing:1.2px}
+.chord-palette{gap:4px;margin-bottom:9px}
+.chord-palette button{padding:7px 2px}
+.chord-palette button strong{font-size:12px}
+.chord-palette button small{font-size:8px}
+.note-palette{gap:4px;margin-bottom:4px}
+.note-palette button{padding:5px 7px;gap:4px}
+.note-palette button b{font-size:11px}
+.note-palette button small{font-size:8px}
+.scene-description{font-size:10px;margin:5px 0 9px}
+#instrument-controls{margin-bottom:8px;gap:8px}
+#instrument-controls label{font-size:9px;max-width:none;min-width:100px}
+#instrument-controls select{font-size:10px;min-height:31px}
+.legend{font-size:8px;flex-basis:auto;width:auto;margin:0 0 5px auto}
+.instrument-panel{padding:8px;margin-bottom:7px}
+.instrument-caption{margin-bottom:4px}
+.instrument-caption h3{font-size:11px}
+.instrument-caption span{font-size:8px}
+.chord-diagram{max-height:185px;width:160px;flex-basis:160px}
+.diagram-layout{gap:8px;justify-content:space-evenly}
+.voicing-info{max-width:135px;font-size:10px}
+.voicing-info strong{font-size:11px;margin-bottom:5px}
+.string-recipe{gap:3px;margin:7px 0}
+.string-recipe span{padding:3px 4px;font-size:10px}
+.instrument-description{font-size:9px;margin-top:6px}
+.live-note{font-size:11px;margin-top:6px}
+.fret-cell{height:30px}
+.fret-cell button{height:24px;width:24px;font-size:9px}
+#piano-render{height:122px}
+footer{flex-wrap:wrap;font-size:9px;padding:14px 0;margin-top:12px}
+footer span{width:100%}
+#guided-panel h1,#guided-panel>.eyebrow{display:none}
+#guided-setup{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#guided-setup>label{margin:0}
+#guided-setup>label.check,#guided-setup>.muted{grid-column:span 2}
+#guided-setup>.muted{font-size:10px}
+#guided-setup>button{grid-column:span 2}
+#guided-session{display:grid;grid-template-columns:1fr auto;align-items:center;gap:6px}
+#guided-count{justify-self:start}
+#guided-session h2{margin:0;font-size:19px;grid-column:1}
+#guided-phase{grid-column:1;font-size:11px;min-height:0}
+#beats{grid-column:2;grid-row:1 / span 3;margin:0;gap:4px}
+#beats i{height:25px;width:25px;font-size:10px}
+#guided-session .actions{grid-column:span 2;margin-top:5px}
+}
+
+@media(max-width:370px){.legend{width:100%;margin:0}
+.chord-diagram{width:140px;flex-basis:140px}
+.voicing-info{max-width:115px}
+.chord-palette button strong{font-size:11px}
+.toolbar>label{flex:1}
+.toolbar summary{padding:8px 5px}
+}
+
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}
+
+
+@media(max-width:720px){body.practicing .toolbar,body.guiding .toolbar{display:none}
+body.practicing .instrument-stage .scene-description{font-size:10px}
+body.practicing #instrument-controls{margin-bottom:6px}
+}
+
+
+.fingers{margin-top:8px;font-size:10px;color:#c0cee3;line-height:1.5}
+
+@media(min-width:1001px){.instrument-pair.both{display:grid;grid-template-columns:minmax(250px,.9fr) minmax(0,1.1fr);gap:10px;align-items:start}
+.both .diagram-layout{flex-direction:column;gap:2px}
+.both .chord-diagram{width:145px;max-height:160px;flex-basis:auto}
+.both .voicing-info{max-width:none;text-align:center;font-size:10px}
+.both .voicing-info strong{font-size:11px;margin-bottom:3px}
+.both .string-recipe{justify-content:center;margin:5px 0}
+.both .fingers{display:none}
+.both .instrument-caption span{font-size:8px}
+.both .instrument-description{font-size:9px}
+.both .instrument-panel{min-width:0}
+}
+
+@media(max-width:720px){#explore-panel .learn-more:not([open]){display:none}
+.both .chord-diagram{max-height:140px;width:130px;flex-basis:130px}
+.both .fingers{display:none}
+}
+
+
+.chord-diagram line.barre{stroke:var(--lilac);stroke-width:15;stroke-linecap:round;opacity:.55}
+body[data-exercise-type="ear"] #instrument-controls{display:none}
