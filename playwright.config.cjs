@@ -4,6 +4,7 @@ module.exports = defineConfig({
   testDir: './tests',
   testMatch: '**/*.spec.cjs',
   workers: 2,
-  use: { baseURL: 'http://127.0.0.1:5174', headless: true, launchOptions: { executablePath: process.env.CHROMIUM_PATH || (existsSync('/usr/bin/chromium') ? '/usr/bin/chromium' : undefined), args: ['--no-sandbox'] } },
+  reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
+  use: { baseURL: 'http://127.0.0.1:5174', headless: true, trace: 'retain-on-failure', screenshot: 'only-on-failure', launchOptions: { executablePath: process.env.CHROMIUM_PATH || (!process.env.CI && existsSync('/usr/bin/chromium') ? '/usr/bin/chromium' : undefined), args: ['--no-sandbox'] } },
   webServer: { command: 'npm run build && python3 -m http.server 5174 --bind 127.0.0.1 --directory dist', port: 5174, reuseExistingServer: false }
 });

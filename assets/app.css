@@ -445,3 +445,11 @@ body[data-page=learn] .toolbar>label:has(#key),body[data-page=learn] .toolbar>la
 @media(max-width:720px){body.cycling #cycle-policy-label{display:none}}
 body[data-page=learn] #play-scene,body[data-page=learn] .instrument-settings button:disabled{display:none}
 @media(min-width:1001px){body[data-page=learn] .workspace{grid-template-columns:360px minmax(0,1fr)}body[data-page=learn] .both .diagram-layout{flex-direction:column}}
+/* Stabilization: readable labels and feedback, with spatial instrument targets retained. */
+.instrument-caption span{font-size:11px}
+.instrument-description,.scene-description{font-size:12px}
+.legend{font-size:11px}
+.actions button{min-height:40px;font-size:12px}
+.mode-tabs button{min-height:44px}
+@media(max-width:720px){.instrument-caption span{font-size:10px}.instrument-description,.scene-description{font-size:11px}.legend{font-size:9px}.practicing .scene-description,body.cycling .scene-description{display:none}.practicing .instrument-description{margin-top:4px}.instrument-settings label{font-size:11px}.instrument-settings select{font-size:11px}.practicing #question-help{font-size:11px}}
+@media(max-width:720px){body.cycling #instrument-controls{display:none}body.cycling .instrument-stage{padding:10px}}

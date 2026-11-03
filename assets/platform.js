@@ -16,7 +16,7 @@ function sync(next){
  $('practice-tabs').hidden=page!=='practice';
  if(page==='home')renderHome();if(page==='learn'&&!lesson)renderCatalog();
 }
-function show(next){finishLesson();Studio.stop();if(next==='practice'||next==='explore'){Studio.setMode(next==='practice'?'practice':'explore');return;}sync(next);window.scrollTo(0,0);}
+function show(next){if(next===page&&next==='practice')return;finishLesson();Studio.stop();if(next==='practice'||next==='explore'){Studio.setMode(next==='practice'?'practice':'explore');return;}sync(next);window.scrollTo(0,0);}
 window.addEventListener('studio:mode',e=>{finishLesson();sync(e.detail==='explore'?'explore':'practice');window.scrollTo(0,0);});
 for(const b of document.querySelectorAll('[data-page]'))if(!b.dataset.mode)b.addEventListener('click',()=>show(b.dataset.page));
 function instrumentPicker(){const label=el('label','Seu instrumento');const select=el('select');select.id='home-instrument';for(const key of Object.keys(names)){const o=el('option',names[key]);o.value=key;select.append(o);}select.value=activeInstrument();select.addEventListener('change',()=>{$('instrument').value=select.value;$('reference-instrument').value=select.value;$('cycle-reference').value=select.value;$('instrument').dispatchEvent(new Event('change'));renderHome();});label.append(select);return label;}
@@ -47,7 +47,7 @@ function renderCatalog(){const container=$('learn-page');container.replaceChildr
  const grid=el('div',undefined,'course-grid');for(const [id,title,description] of content.tracks){const card=el('article',undefined,'dashboard-card');card.append(el('h2',title),el('p',description,'muted'));const units=content.units.filter(u=>u.track===id);for(const u of units){const completed=store.get().lessons[activeInstrument()+':'+u.id]?.completed;card.append(el('p',u.objective),button((completed?'✓ Revisar · ':'Começar · ')+u.title+' · '+u.minutes+' min',()=>openUnit(u.id),'primary'));}if(!units.length)card.append(el('p','Conteúdo futuro · ainda não publicado','future-label'));grid.append(card);}container.append(grid);}
 function openUnit(id){
  finishLesson();Studio.stop();const unit=content.units.find(u=>u.id===id);previousTheory={key:$('key').value,scale:$('scale').value};$('key').value='0';$('scale').value='Maior';
- lesson={unit,instrument:activeInstrument(),phase:'read',seen:new Set(),index:0,correct:0,answered:false,sequence:[],run:null};
+ lesson={unit,instrument:activeInstrument(),phase:'read',seen:new Set(),index:0,correct:0,results:{},answered:false,sequence:[],run:null};
  sync('learn');for(const panel of document.querySelectorAll('#workspace>.lesson-panel'))panel.hidden=true;$('learn-unit-panel').hidden=false;for(const id of ['key','scale'])$(id).disabled=true;
  renderLesson();window.scrollTo(0,0);
 }
@@ -63,7 +63,7 @@ function renderLesson(){
   const start=button('Praticar esta aula · 4 questões',()=>{l.phase='quiz';l.run=store.begin(u.skill,activeInstrument(),'lesson',2);renderLesson();window.scrollTo(0,0);},'primary');start.dataset.startLesson='true';start.disabled=l.seen.size<u.demos.length;panel.append(start);const second=start.cloneNode(true);second.addEventListener('click',()=>start.click());$('lesson-examples').append(second);neutral();
  }else if(l.phase==='quiz')renderQuestion(panel);
  else {
-  const passed=l.correct>=3;panel.append(el('h2',passed?'✓ Aula concluída!':'↻ Vamos revisar.'),el('p',`${l.correct} de 4 acertos. ${passed?'Você pode continuar ou revisar os exemplos.':'Revise os exemplos e tente novamente; o objetivo é pelo menos 3 acertos.'}`));
+  const passed=Object.values(l.results).some(r=>r.total===4&&r.correct>=3);panel.append(el('h2',passed?'✓ Aula concluída!':'↻ Vamos revisar.'),el('p',`${l.correct} de 4 acertos. ${Object.keys(l.results).length>1?'Atividade mista: resultados separados por instrumento. Complete quatro questões no mesmo instrumento para concluir a unidade. ':''}${passed?'Você pode continuar ou revisar os exemplos.':'Revise os exemplos e tente novamente; o objetivo é pelo menos 3 acertos.'}`));
   panel.append(button('Revisar e repetir',()=>openUnit(u.id)));
   const next=content.units[content.units.indexOf(u)+1];if(passed&&next)panel.append(button('Próxima aula →',()=>openUnit(next.id),'primary'));panel.append(button('Ver meu progresso',()=>show('home')));Studio.lesson({kind:'scale',scale:T.scale(0),selected:[],title:'Continue praticando',description:'Use as notas para revisar no seu instrumento.'});
  }
@@ -77,21 +77,22 @@ function renderQuestion(panel){
  const actions=el('div',undefined,'answers');
  if(q.kind==='choice'||q.kind==='ear')q.choices.forEach((text,i)=>actions.append(button(text,()=>answer(i===q.answer))));
  if(q.kind==='note')panel.append(el('p','Responda tocando uma nota no instrumento. Qualquer oitava é válida.','muted'));
- if(q.kind==='sequence'){panel.append(el('p','Toque três notas em ordem ascendente; a sequência é avaliada ao confirmar.','muted'));actions.append(button('Limpar sequência',()=>{l.sequence=[];neutral();$('lesson-live').textContent='Sequência limpa.';}),button('Confirmar arpejo',()=>answer(l.sequence.length===3&&T.mod(l.sequence[0])===0&&q.offsets.every((v,i)=>l.sequence[i]-l.sequence[0]===v)),'primary'));}
+ if(q.kind==='sequence'){panel.append(el('p','Toque três notas em ordem ascendente; a sequência é avaliada ao confirmar.','muted'));actions.append(button('Limpar sequência',()=>{l.sequence=[];l.sequences[l.instrument]=l.sequence;neutral();$('lesson-live').textContent='Sequência limpa.';}),button('Confirmar arpejo',()=>answer(l.sequence.length===3&&T.mod(l.sequence[0])===0&&q.offsets.every((v,i)=>l.sequence[i]-l.sequence[0]===v)),'primary'));}
  if(q.kind==='ear')panel.append(button('Ouvir novamente',()=>Studio.hidden(q.pcs),'primary'));
  panel.append(actions,el('p','', 'live-note'));panel.lastChild.id='lesson-live';neutral();
  if(q.kind==='ear')Studio.hidden(q.pcs);
 }
 function answer(correct){
  const l=lesson;if(!l||l.phase!=='quiz'||l.answered)return;l.answered=true;l.correct+=Number(correct);
+ const bucket=l.results[l.instrument]||(l.results[l.instrument]={correct:0,total:0});bucket.total++;bucket.correct+=Number(correct);
  const q=l.unit.questions[l.index];store.record({skill:l.unit.skill,instrument:l.instrument,correct,difficulty:2,session:l.run,question:l.unit.id+':'+l.index});
  const feedback=el('div',undefined,correct?'result-success lesson-feedback':'result-error lesson-feedback');feedback.setAttribute('role','status');feedback.append(el('strong',correct?'✓ Acertou!':'✕ Vamos revisar.'),el('p',q.explanation));$('learn-unit-panel').append(feedback);
  try{if($('feedback-sound').checked)soundEngine.feedback(correct);}catch(_){}
  for(const b of $('learn-unit-panel').querySelectorAll('.answers button'))b.disabled=true;
- $('learn-unit-panel').append(button(l.index===3?'Ver resultado →':'Próxima questão →',()=>{l.index++;if(l.index===4){store.lesson(l.unit.id,l.instrument,l.correct/4);store.end(l.run,true);l.phase='result';}renderLesson();window.scrollTo(0,0);},'primary'));
+ $('learn-unit-panel').append(button(l.index===3?'Ver resultado →':'Próxima questão →',()=>{l.index++;if(l.index===4){for(const [instrument,r] of Object.entries(l.results))store.lesson(l.unit.id,instrument,r.correct/r.total,r.total);store.end(l.run,true);l.phase='result';}renderLesson();window.scrollTo(0,0);const heading=$('learn-unit-panel').querySelector('h2');if(heading){heading.tabIndex=-1;heading.focus({preventScroll:true});}},'primary'));
 }
 window.addEventListener('studio:note',e=>{
- if(!lesson)return;const l=lesson,n=e.detail;l.instrument=n.instrument||activeInstrument();if(l.phase==='quiz'&&l.unit.questions[l.index].kind==='sequence'){l.sequence=l.sequences[l.instrument]||(l.sequences[l.instrument]=[]);}Studio.select(n);if(l.phase!=='quiz'||l.answered)return;const q=l.unit.questions[l.index];
+ if(!lesson)return;const l=lesson,n=e.detail;if(l.phase==='quiz'&&l.answered){Studio.select(n);return;}l.instrument=n.instrument||activeInstrument();if(l.phase==='quiz'&&l.unit.questions[l.index].kind==='sequence'){l.sequence=l.sequences[l.instrument]||(l.sequences[l.instrument]=[]);}Studio.select(n);if(l.phase!=='quiz'||l.answered)return;const q=l.unit.questions[l.index];
  if(q.kind==='note')answer(T.mod(n.midi)===q.pc);else if(q.kind==='sequence'){l.sequence.push(n.midi);$('lesson-live').textContent='Sua sequência: '+l.sequence.map(m=>T.label(T.tonics.Maior[T.mod(m)])+(Math.floor(m/12)-1)).join(' → ');}
 });
 window.addEventListener('studio:lesson-render',()=>{if(lesson){lesson.instrument=activeInstrument();if(lesson.phase==='read')renderLesson();else{if(lesson.phase==='quiz'){lesson.sequence=lesson.sequences[activeInstrument()]||(lesson.sequences[activeInstrument()]=[]);if($('lesson-live'))$('lesson-live').textContent=lesson.sequence.length?'Sequência mantida: '+lesson.sequence.length+' notas.':'';}Studio.render();}}});

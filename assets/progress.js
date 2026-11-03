@@ -18,16 +18,16 @@
     function persist(){try{if(writable)storage.setItem(KEY,JSON.stringify(state));}catch(_){} }
     function begin(skill,instrument,mode='learn',difficulty=2){
       const id=Date.now().toString(36)+'-'+(++state.serial);
-      state.sessions.push({id,skill,instrument,mode,difficulty,started:new Date().toISOString(),attempts:0,correct:0,completed:false,ended:false});state.sessions=state.sessions.slice(-60);persist();return id;
+      state.sessions.push({id,skill,instrument,mode,difficulty,started:new Date().toISOString(),attempts:0,correct:0,instruments:[],completed:false,ended:false});state.sessions=state.sessions.slice(-60);persist();return id;
     }
     function record({skill,instrument,correct,difficulty=2,session,question}){
       if(!instruments.includes(instrument)||!/^[-a-z]+$/.test(skill)||typeof correct!=='boolean')return;
       const key=instrument+':'+skill,s=state.skills[key]||(state.skills[key]={attempts:0,correct:0,recent:[]});
       s.attempts++;s.correct+=Number(correct);s.recent.push({correct,difficulty,session:String(session),question:String(question),at:new Date().toISOString()});s.recent=s.recent.slice(-20);
-      const run=state.sessions.find(s=>s.id===session);if(run){run.attempts++;run.correct+=Number(correct);run.instruments=[...new Set([...(run.instruments||[run.instrument]),instrument])];}persist();
+      const run=state.sessions.find(s=>s.id===session);if(run){run.attempts++;run.correct+=Number(correct);run.instruments=[...new Set([...(run.instruments||[]),instrument])];if(run.attempts===1)run.instrument=instrument;}persist();
     }
     function end(id,completed=false){const s=state.sessions.find(s=>s.id===id);if(s&&!s.ended){s.ended=true;s.completed=completed;s.finished=new Date().toISOString();persist();}}
-    function lesson(id,instrument,score){const key=instrument+':'+id,previous=state.lessons[key];state.lessons[key]={completed:score>=.75||!!previous?.completed,best:Math.max(previous?.best||0,score),updated:new Date().toISOString()};persist();}
+    function lesson(id,instrument,score,answered=4){const key=instrument+':'+id,previous=state.lessons[key];state.lessons[key]={completed:score>=.75&&answered>=4||!!previous?.completed,best:Math.max(previous?.best||0,answered>=4?score:0),answered,updated:new Date().toISOString()};persist();}
     function status(s){
       const recent=s?.recent||[],rate=recent.length?recent.filter(a=>a.correct).length/recent.length:0;
       if(recent.length>=3&&rate<.65)return 'Revisar';

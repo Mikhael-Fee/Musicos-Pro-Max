@@ -1,22 +1,53 @@
 name: Validar aplicação
 on:
   push:
-    branches: [main]
   pull_request:
+  workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: validation-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    # Exact match to package-lock.json: supported Noble base, browsers and OS libs included.
+    container:
+      image: mcr.microsoft.com/playwright:v1.58.2-noble
+      options: --ipc=host
+    env:
+      CI: 'true'
+      PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: npm
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
-      - run: npm ci
-      - run: npx playwright install --with-deps chromium
-      - run: npm test
+      - name: Instalar dependências pelo lockfile
+        run: npm ci
+      - name: Verificar versão e navegador da imagem
+        run: |
+          node -e "const fs=require('node:fs'); const p=require('@playwright/test/package.json'); if(p.version!=='1.58.2') throw Error('Atualize a imagem junto com o Playwright'); const exe=require('@playwright/test').chromium.executablePath(); if(!fs.existsSync(exe)) throw Error('Chromium ausente: '+exe); console.log(p.version,exe)"
+          node --version
+          python3 --version
+      - name: Build de produção
+        run: npm run build
+      - name: Testes unitários
+        run: npm run test:unit
+      - name: Testes de interface e áudio
+        run: npm run test:e2e
+      - name: Relatórios de diagnóstico
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: playwright-${{ github.run_id }}
+          path: |
+            test-results/
+            playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7

@@ -42,3 +42,8 @@ test('a page reload marks an unfinished session interrupted without losing its a
  p.record({skill:'intervals',instrument:'bass',correct:false,session:id,question:'2'});
  const restored=create(memory);assert.equal(restored.get().sessions[0].interrupted,true);assert.equal(restored.get().sessions[0].completed,false);assert.equal(restored.get().skills['bass:intervals'].attempts,1);
 });
+
+test('session instrumentation follows actual answers and partial lessons do not earn completion',()=>{
+ const memory=storage(),p=create(memory),id=p.begin('notes','guitar');p.record({skill:'notes',instrument:'bass',correct:true,session:id,question:'C'});assert.deepEqual(p.get().sessions[0].instruments,['bass']);assert.equal(p.get().sessions[0].instrument,'bass');
+ p.lesson('notes','bass',1,2);assert.equal(p.get().lessons['bass:notes'].completed,false);
+});

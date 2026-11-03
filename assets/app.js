@@ -90,7 +90,7 @@
     }
     return (automatic?.pitches || T.pianoVoicing(chord, Number($('inversion').value), $('piano-layout').value)).map(midi => ({ midi }));
   }
-  function playChord(chord, instruments = auditionInstruments()) { playArrangement(instruments.map(instrument => ({ instrument, notes: chordPitches(chord, instrument) })), $('play-style').value === 'block' ? 0 : .1, false); }
+  function playChord(chord, instruments = auditionInstruments()) { if(cycleSession&&!cycleSession.answered)cycleSession.auditionSource=instruments[0];playArrangement(instruments.map(instrument => ({ instrument, notes: chordPitches(chord, instrument) })), $('play-style').value === 'block' ? 0 : .1, false); }
   function noteLocation(pc, instrument = effectiveInstrument()) {
     if(instrument==='bass')return scene.kind==='chord'?chordPitches(scene.chord,'bass').find(n=>T.mod(n.midi)===pc)||B.note(pc,bassPosition()):B.note(pc,bassPosition());
     if (instrument === 'guitar') {
@@ -205,6 +205,7 @@
       const score = session.correct, total=session.length;
       endPractice(`Treino concluído: ${score} de ${total} acertos. ${score/total >= .8 ? 'Experimente outra tonalidade ou extensão.' : 'Revise as notas e tente mais uma vez.'}`); return;
     }
+    if(visibleInstruments().length===1)session.instrument=visibleInstruments()[0];$('answer-instrument').value=session.instrument;
     stopAudio(); session.answerSource=null; session.answered = false; session.choice = null; session.selection = []; session.selections = { guitar: [], piano: [], bass: [] }; session.selections[session.instrument] = session.selection;
     $('feedback').replaceChildren(); $('feedback').className = ''; $('practice-panel').removeAttribute('data-result'); $('answers').replaceChildren();
     $('confirm-answer').hidden = session.type === 'notes'; $('confirm-answer').disabled = true;
@@ -543,6 +544,7 @@
     s.answered = false; s.choice = null;
     const current = s.notes[s.completed], next = s.notes[(s.completed + 1) % 12]; s.expected = next.pc;
     s.anchor = s.current || cycleVoicings(cycleChord(current));
+    $('cycle-exercise').querySelector('.muted').textContent=$('cycle-policy').value==='challenge'?'Selecione e confirme; a resposta aparece depois.':'Ouça as opções e confirme.';
     $('cycle-count').textContent = `Questão ${s.completed + 1}/12 · ${s.correct} acertos`;
     $('cycles-help').textContent = 'Complete a volta mantendo as notas em comum. Cada alternativa parte do acorde atual e usa a inversão mais próxima.';
     $('cycle-question').textContent = `Depois de ${current.name}, qual é a próxima ${$('cycle-direction').value === 'fourths' ? 'quarta' : 'quinta'} justa?`;
@@ -569,7 +571,7 @@
     const from = s.notes[s.completed], to = s.notes[(s.completed + 1) % 12], correct = s.choice === s.expected;
     s.answered = true; s.completed++; stats.attempts++; if (correct) { s.correct++; stats.correct++; }
     if (s.completed === 12) stats.sessions++;
-    progress.record({skill:'cycles',instrument:auditionInstruments()[0],correct,difficulty:2,session:s.progressId,question:$('cycle-direction').value+':'+from.pc});
+    progress.record({skill:'cycles',instrument:s.auditionSource||auditionInstruments()[0],correct,difficulty:2,session:s.progressId,question:$('cycle-direction').value+':'+from.pc});
     save(statsKey, stats); updateStats();
     showResult($('cycle-feedback'), $('cycles-panel'), correct, `${from.name} → ${to.name}: ${$('cycle-direction').value === 'fourths' ? 'quarta justa, 5 semitons' : 'quinta justa, 7 semitons'}.`);
     $('confirm-cycle').hidden = true; $('next-cycle-question').hidden = false; $('next-cycle-question').textContent = s.completed === 12 ? 'Ver resultado →' : 'Próxima →';
