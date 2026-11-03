@@ -35,3 +35,10 @@ test('post-attempt alternatives preserve tonal context and every completion incl
  for(const p of A.bank.filter(p=>p.kind!=='melody'))for(const [value] of p.choices){const m=A.material({pattern:p.id,key:8},'bass'),alt=A.alternative(m,value);assert.equal(alt.key,8);assert.ok(alt.notes.length>0);assert.ok(alt.midi.every(n=>T.scale(8).some(t=>t.pc===T.mod(n))));}
  for(const p of A.bank.filter(p=>p.kind==='completion'))assert.equal(p.answer,String(p.notes.at(-1)));
 });
+test('each initial skill can gather adaptive evidence without changing the selected key',()=>{
+ for(const skill of Object.keys(A.skills)){
+  const pool=A.bank.filter(p=>p.skill===skill&&p.level===1);assert.ok(pool.length>=4,skill);
+  const recent=Array.from({length:8},(_,i)=>({correct:true,difficulty:1,session:'s'+Math.floor(i/4),question:S.key({type:'tonal',pattern:pool[i%4].id,key:0})}));assert.equal(S.recommendation({attempts:8,recent}).level,2,skill);
+ }
+ const m=A.material({pattern:'degree-context-0',key:6});assert.equal(m.answer,'2');assert.match(A.explanation(m),/3º grau/);assert.match(A.explanation(m),/última nota/);
+});

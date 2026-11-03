@@ -2,10 +2,11 @@
 
 ## 3.2.0 — 03/11/2026 · Fase 3A
 
-- Praticar → Ouvido reúne o acesso aos intervalos existentes e cinco habilidades de percepção tonal, com 84 exemplos originais em 12 tonalidades maiores e três dificuldades por habilidade.
+- Praticar → Ouvido reúne o acesso aos intervalos existentes e cinco habilidades de percepção tonal, com 87 variações de exercícios originais em 12 tonalidades maiores e três dificuldades por habilidade.
 - Direção/repetição/retorno, centro tonal e repouso contextual, graus, progressões/cadências e reprodução de frases de três a sete notas nos instrumentos virtuais existentes.
 - Referência tonal fixa por atividade, escuta sem revelar a resposta, confirmação explícita, feedback por altura/direção/ordem, comparação sonora e ajuda progressiva registrada sem nota.
 - Revisões e planos diários integrados, sem mudar o schema nem os planos já salvos; novos resultados separados por habilidade e instrumento.
+- Graus iniciais incluem notas isoladas e pequenas frases, permitindo avanço automático em um tom fixo sem reduzir o critério de variedade.
 - Duração opcional no motor de áudio, cancelamento inclusive durante retomada de contexto e suíte móvel contínua, preservando o comportamento anterior quando a duração não é especificada.
 
 ## 3.1.0 — 03/11/2026
