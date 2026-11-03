@@ -50,3 +50,6 @@ test('cancellation during audio resume schedules no stale notes or completion',a
 test('home recommendations open the weak skill on the instrument whose results were shown',async({page})=>{
  await page.evaluate(()=>{localStorage.setItem('musicospromax.ear.v1',JSON.stringify({instrument:'piano'}));for(let i=0;i<3;i++){const session=learningStore.begin('tonal-direction','bass');learningStore.record({skill:'tonal-direction',instrument:'bass',session,correct:false,difficulty:1,question:'direction-'+i});learningStore.end(session,true);}});await page.reload();await page.selectOption('#home-instrument','bass');await page.getByRole('button',{name:'Revisar Direção melódica',exact:true}).click();await expect(page.locator('#ear-instrument')).toHaveValue('bass');await expect(page.locator('#ear-skill')).toHaveValue('tonal-direction');
 });
+test('intermediate melodic phrases support repeated notes and five-note memory on a fixed key',async({page})=>{
+ await force(page,'melody-2-4','piano',0);await hear(page);for(const midi of [48,52,53,52,48])await note(page,'piano',midi);await page.click('#ear-confirm');await expect(page.locator('#ear-feedback')).toContainText('Acertou');expect(await page.evaluate(()=>learningStore.get().skills['piano:tonal-melody'].recent[0].difficulty)).toBe(2);
+});
