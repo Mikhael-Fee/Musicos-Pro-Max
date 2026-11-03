@@ -1,9 +1,13 @@
 (function () {
   'use strict';
-  const $ = id => document.getElementById(id), T = MusicTheory, G = GuitarTheory;
+  const $ = id => document.getElementById(id), T = MusicTheory, G = GuitarTheory, B = BassTheory;
+  const progress = window.learningStore = LearningProgress.create({getItem:k=>localStorage.getItem(k),setItem:(k,v)=>localStorage.setItem(k,v)});
+  const instrumentName = name => ({guitar:'Violão',piano:'Teclado',bass:'Baixo'}[name]);
+  const skillOf = (type,instrument) => type==='build' ? instrument==='bass'?'arpeggios':'chords' : ({notes:'notes',ear:'intervals',degrees:'degrees',field:'harmony',scales:'scales'}[type]||type);
+  let comparisonFocus='guitar';
   const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
   const settingsKey = 'musicospromax.settings.v2', statsKey = 'musicospromax.stats.v1';
-  const settingIds = ['key', 'scale', 'instrument', 'explore-topic', 'field-format', 'chord-type', 'note-labels', 'play-style', 'inversion', 'piano-layout', 'guitar-view', 'scale-position', 'volume', 'guitar-volume', 'piano-volume', 'reference-instrument', 'feedback-sound', 'feedback-volume', 'cycle-direction', 'cycle-reference'];
+  const settingIds = ['key', 'scale', 'instrument', 'explore-topic', 'field-format', 'chord-type', 'note-labels', 'play-style', 'inversion', 'piano-layout', 'guitar-view', 'scale-position', 'volume', 'guitar-volume', 'piano-volume', 'reference-instrument', 'feedback-sound', 'feedback-volume', 'bass-volume', 'bass-region', 'practice-policy', 'practice-difficulty', 'practice-length', 'cycle-policy', 'bass-pattern', 'cycle-direction', 'cycle-reference'];
   let mode = 'explore', degree = 1, scene, session = null, guided = null, cycleSession = null, cyclePlayback = 0, cycleCurrent = null;
   let playback = 0, audioTimers = [], feedbackUntil = 0;
   let stats = { attempts: 0, correct: 0, sessions: 0 };
@@ -12,13 +16,21 @@
   function key() { return Number($('key').value); }
   function scale() { return T.scale(key(), $('scale').value); }
   function field(seventh = $('field-format').value === 'seventh') { return Array.from({ length: 7 }, (_, i) => T.chord(key(), $('scale').value, i + 1, seventh)); }
-  function options() { return { labels: $('note-labels').value, instrument: $('instrument').value, guitarView: scene?.voicings ? 'standard' : $('guitar-view').value, position: position(), inversion: Number($('inversion').value), pianoLayout: $('piano-layout').value }; }
+  function options() { return { labels: $('note-labels').value, instrument: $('instrument').value, guitarView: scene?.voicings ? 'standard' : $('guitar-view').value, position: position(), inversion: Number($('inversion').value), pianoLayout: $('piano-layout').value, instruments:visibleInstruments(),comparisonFocus,bassPosition: bassPosition(),bassAll:$('bass-region').value==='all' }; }
   function position() { const value = $('scale-position').value; return value === 'root6' ? T.mod(key() - 4) : value === 'root5' ? T.mod(key() - 9) : 0; }
-  function visibleInstruments() { return $('instrument').value === 'both' ? ['guitar', 'piano'] : [$('instrument').value]; }
+  function visibleInstruments() { return ({both:['guitar','piano'],'bass-piano':['bass','piano'],'bass-guitar':['bass','guitar'],all:['guitar','piano','bass']})[$('instrument').value] || [$('instrument').value]; }
+  function bassPosition() {return $('bass-region').value==='auto'||$('bass-region').value==='all'?B.region(key()):Number($('bass-region').value);}
+  function bassScalePath(){let path=B.ascendingPath(scale(),bassPosition());if(!path.length){scene.bassRegion=B.region(key());$('bass-region').value='auto';saveSettings();path=B.ascendingPath(scale(),scene.bassRegion);}return path;}
   function auditionInstruments() {
-    if (mode === 'practice') return [$('reference-instrument').value];
-    if (mode === 'cycles') return $('cycle-reference').value === 'both' ? ['guitar', 'piano'] : [$('cycle-reference').value];
+    if(mode==='practice')return [$('reference-instrument').value];
+    if(mode==='cycles')return $('cycle-reference').value==='both'?['guitar','piano']:$('cycle-reference').value==='all'?['guitar','piano','bass']:[$('cycle-reference').value];
     return visibleInstruments();
+  }
+  function nextFrom(pool,deck='notes'){
+    session.decks ||= {};
+    if(!session.decks[deck]?.length)session.decks[deck]=shuffle(pool);
+    if((typeof session.decks[deck].at(-1)==='number'?session.decks[deck].at(-1):session.decks[deck].at(-1)?.degree)===session.last && pool.length>1)session.decks[deck].unshift(session.decks[deck].pop());
+    return session.decks[deck].pop();
   }
   function effectiveInstrument() { return auditionInstruments()[0]; }
   function sourceOf(n) { return n.instrument || (n.string === undefined ? 'piano' : 'guitar'); }
@@ -37,7 +49,7 @@
   function draw() { InstrumentUI.render(scene, options()); }
   function describeNote(n) {
     const name = scene.chord?.notes.find(x => x.pc === T.mod(n.midi))?.name || scale().find(x => x.pc === T.mod(n.midi))?.name || T.tonics.Maior[T.mod(n.midi)];
-    return `${T.label(name, 'solfege')} (${T.label(name)}${Math.floor(n.midi / 12) - 1})${n.string === undefined ? '' : ` · ${6 - n.string}ª corda, ${n.fret === 0 ? 'solta' : 'casa ' + n.fret}`}`;
+    return `${T.label(name, 'solfege')} (${T.label(name)}${Math.floor(n.midi / 12) - 1})${n.string === undefined ? '' : ` · ${(sourceOf(n)==='bass'?4:6) - n.string}ª corda, ${n.fret === 0 ? 'solta' : 'casa ' + n.fret}`}`;
   }
   function playArrangement(parts, spacing = .24, keepSelection = true) {
     cancelAudition(); const token = playback;
@@ -49,28 +61,29 @@
     for (const part of available) {
       const tagged = part.notes.map(n => ({ ...n, instrument: part.instrument }));
       tagged.forEach((n, i) => {
-        const at = delay + i * spacing;
+        const at = delay + i * (part.instrument==='bass'?Math.max(.24,spacing):spacing);
         midiNote(n, at, part.instrument);
         const mark = () => {
           if (token !== playback) return;
           active[part.instrument] = spacing ? [n] : tagged; show();
-          $('live-note').textContent = `${part.instrument === 'piano' ? 'Teclado' : 'Violão'} · ${describeNote(n)}`;
+          $('live-note').textContent = `${instrumentName(part.instrument)} · ${describeNote(n)}`;
         };
         if (at === 0) mark(); else audioTimers.push(setTimeout(mark, at * 1000));
       });
     }
-    const length = Math.max(...available.map(p => p.notes.length));
+    const finish = Math.max(...available.map(p => (p.notes.length-1)*(p.instrument==='bass'?Math.max(.24,spacing):spacing)));
     audioTimers.push(setTimeout(() => {
       if (token !== playback) return;
       scene.selected = keepSelection ? available.flatMap(p => p.notes.map(n => ({ ...n, instrument: p.instrument }))) : [];
       draw();
-    }, (delay + (length - 1) * spacing) * 1000 + 200));
+    }, (delay + finish) * 1000 + 200));
   }
   function playSeries(notes, spacing = .24, instrument = effectiveInstrument(), keepSelection = true) {
     playArrangement([{ instrument, notes }], spacing, keepSelection);
   }
   function chordPitches(chord, instrument = effectiveInstrument()) {
     const automatic = scene?.chord?.root === chord.root && scene.chord.type === chord.type ? scene.voicings?.[instrument] : null;
+    if(instrument==='bass')return automatic?.notes || B.arpeggio(chord,bassPosition());
     if (instrument === 'guitar') {
       const v = automatic || G.voicing(chord, $('guitar-view').value === 'compact');
       if (v) return v.frets.flatMap((fret, string) => fret === null ? [] : [{ midi: G.TUNING[string] + fret, string, fret }]);
@@ -79,6 +92,7 @@
   }
   function playChord(chord, instruments = auditionInstruments()) { playArrangement(instruments.map(instrument => ({ instrument, notes: chordPitches(chord, instrument) })), $('play-style').value === 'block' ? 0 : .1, false); }
   function noteLocation(pc, instrument = effectiveInstrument()) {
+    if(instrument==='bass')return scene.kind==='chord'?chordPitches(scene.chord,'bass').find(n=>T.mod(n.midi)===pc)||B.note(pc,bassPosition()):B.note(pc,bassPosition());
     if (instrument === 'guitar') {
       if (scene.kind === 'chord' && !scene.forceBoard && (scene.voicings || $('guitar-view').value !== 'all')) {
         const match = chordPitches(scene.chord, 'guitar').find(n => T.mod(n.midi) === pc);
@@ -154,6 +168,7 @@
     const type = $('exercise-type').value;
     $('exercise-chord-label').hidden = type !== 'build'; $('practice-field-format-label').hidden = type !== 'field'; $('ear-level-label').hidden = type !== 'ear';
     $('exercise-help').textContent = {
+      scales: 'Toque uma oitava ascendente, da tônica até a próxima tônica. Cada clique é uma nota da sequência; confirme ao terminar.',
       notes: 'Encontre uma nota no instrumento. O nome fica oculto e cada toque produz som.',
       build: 'Monte um acorde tocando suas notas. No violão, escolha uma casa por corda. Depois confirme.',
       ear: 'A primeira nota fica fixa na tonalidade escolhida. Ouça o desafio, experimente as opções com som e marcação, e só então confirme.',
@@ -164,6 +179,7 @@
   function endPractice(message = '') {
     if (session?.type === 'ear') { $('guitar-view').value = session.previousView; $('scale-position').value = session.previousPosition; }
     $('answer-instrument-label').hidden = true; $('practice-panel').removeAttribute('data-result');
+    if(session)progress.end(session.progressId,session.completed===session.length);
     document.body.classList.remove('practicing'); delete document.body.dataset.exerciseType; session = null; stopAudio(); $('practice-setup').hidden = false; $('practice-session').hidden = true;
     $('exercise-help').textContent = message || $('exercise-help').textContent;
     lockMain(false); showExplore();
@@ -171,60 +187,69 @@
   function lockMain(value) { ['key', 'scale'].forEach(id => $(id).disabled = value); }
   function startPractice() {
     stopGuided(); stopAudio();
-    session = { type: $('exercise-type').value, reference: $('reference-instrument').value, instrument: $('instrument').value === 'both' ? $('reference-instrument').value : $('instrument').value, selections: { guitar: [], piano: [] }, completed: 0, correct: 0, last: -1, selection: [], previousView: $('guitar-view').value, previousPosition: $('scale-position').value };
-    document.body.classList.add('practicing'); document.body.dataset.exerciseType = session.type; $('practice-setup').hidden = true; $('practice-session').hidden = false; lockMain(true); syncPracticeView(); $('answer-instrument-label').hidden = session.type !== 'build'; $('answer-instrument').value = session.instrument; nextQuestion();
+    session = { type: $('exercise-type').value, reference: $('reference-instrument').value, instrument: visibleInstruments().includes($('reference-instrument').value)?$('reference-instrument').value:visibleInstruments()[0], selections: { guitar: [], piano: [], bass: [] }, completed: 0, correct: 0, last: -1, selection: [], previousView: $('guitar-view').value, previousPosition: $('scale-position').value };
+    Object.assign(session,{length:Number($('practice-length').value),policy:$('practice-policy').value,difficulty:Number($('practice-difficulty').value),decks:{}});
+    session.progressId=progress.begin(skillOf(session.type,session.instrument),session.instrument,session.policy,session.difficulty);
+    $('session-progress').max=session.length;
+    document.body.classList.add('practicing'); document.body.dataset.exerciseType = session.type; $('practice-setup').hidden = true; $('practice-session').hidden = false; lockMain(true); syncPracticeView(); $('answer-instrument-label').hidden = !['build','scales'].includes(session.type); $('answer-instrument').value = session.instrument; nextQuestion();
   }
   function neutralScene(title, category, hideLabels = false) {
     clearPalettes(); scene = { kind: 'custom', scale: scale(), selected: [], hideLabels, forceBoard: true };
     $('scene-title').textContent = title; $('scene-category').textContent = category;
     $('scene-description').textContent = hideLabels ? 'Nomes ocultos. Toque diretamente no instrumento para responder.' : 'Toque para ouvir. Sua escolha fica marcada em amarelo.';
-    $('play-scene').textContent = 'Ouvir desafio'; $('play-scene').disabled = session?.type !== 'ear' && session?.type !== 'build'; draw();
+    $('play-scene').textContent = 'Ouvir desafio'; $('play-scene').disabled = !['ear','build','scales'].includes(session?.type); draw();
   }
   function nextQuestion() {
     if (!session) return;
-    if (session.completed === 10) {
-      const score = session.correct;
-      endPractice(`Treino concluído: ${score} de 10 acertos. ${score >= 8 ? 'Experimente outra tonalidade ou extensão.' : 'Revise as notas e tente mais uma vez.'}`); return;
+    if (session.completed === session.length) {
+      const score = session.correct, total=session.length;
+      endPractice(`Treino concluído: ${score} de ${total} acertos. ${score/total >= .8 ? 'Experimente outra tonalidade ou extensão.' : 'Revise as notas e tente mais uma vez.'}`); return;
     }
-    stopAudio(); session.answered = false; session.choice = null; session.selection = []; session.selections = { guitar: [], piano: [] }; session.selections[session.instrument] = session.selection;
+    stopAudio(); session.answerSource=null; session.answered = false; session.choice = null; session.selection = []; session.selections = { guitar: [], piano: [], bass: [] }; session.selections[session.instrument] = session.selection;
     $('feedback').replaceChildren(); $('feedback').className = ''; $('practice-panel').removeAttribute('data-result'); $('answers').replaceChildren();
     $('confirm-answer').hidden = session.type === 'notes'; $('confirm-answer').disabled = true;
-    $('clear-selection').hidden = session.type !== 'build'; $('show-example').hidden = true; $('next-question').hidden = true;
-    $('listen-target').hidden = !['ear', 'build'].includes(session.type);
-    $('session-label').textContent = `Questão ${session.completed + 1}/10 · ${session.correct} acertos`;
+    $('clear-selection').hidden = !['build','scales'].includes(session.type); $('show-example').hidden = true; $('next-question').hidden = true;
+    $('listen-target').hidden = !['ear', 'build','scales'].includes(session.type);
+    $('session-label').textContent = `Questão ${session.completed + 1}/${session.length} · ${session.correct} acertos`;
     $('session-progress').value = session.completed;
-    $('question-category').textContent = $('exercise-type').selectedOptions[0].textContent;
+    $('question-category').textContent = $('exercise-type').selectedOptions[0].textContent+(session.policy==='challenge'?' · Desafio':' · Aprender');
     const ns = scale(); let choices = [];
     if (session.type === 'notes' || session.type === 'degrees') {
-      const n = random(ns.filter(x => x.degree !== session.last)); session.last = n.degree; session.targetNote = n; session.expected = n.pc;
+      const n = nextFrom(session.difficulty===1?ns.filter(x=>[1,3,5].includes(x.degree)):ns); session.last = n.degree; session.targetNote = n; session.expected = n.pc;
       $('question').textContent = session.type === 'notes' ? `Encontre ${T.label(n.name, 'solfege')} (${n.name}).` : `Qual nota é o ${n.degree}º grau?`;
       $('question-help').textContent = session.type === 'notes' ? 'Pode ser em qualquer oitava. Toque na nota no instrumento.' : `Escala de ${ns[0].name} ${$('scale').value.toLowerCase()}. Escolha uma nota, ouça e confirme.`;
       neutralScene(`Escala de ${ns[0].name} ${$('scale').value.toLowerCase()}`, 'ESCALA DE REFERÊNCIA', session.type === 'notes');
       if (session.type === 'degrees') choices = ns.map(n => ({ value: n.pc, title: T.label(n.name), note: n }));
+    } else if(session.type==='scales'){
+      $('question').textContent=`Toque ${ns[0].name} ${$('scale').value.toLowerCase()} em ordem.`;
+      $('question-help').textContent='Uma oitava ascendente, oito notas. Limpe a sequência para tentar novamente antes de confirmar.';
+      neutralScene('Toque a escala','ESCALA EM SEQUÊNCIA',session.policy==='challenge');
     } else if (session.type === 'build') {
-      const n = random(ns.filter(n => n.degree !== session.last)); session.last = n.degree;
+      const n = nextFrom(ns); session.last = n.degree;
       const type = $('exercise-chord-type').value;
       session.chord = type === 'field' ? T.chord(key(), $('scale').value, n.degree) : T.buildChord(n.pc, type, n.name);
       configurePiano(session.chord);
-      $('question').textContent = `Monte ${session.chord.name}.`;
+      $('question').textContent = session.instrument==='bass'?`Toque o arpejo de ${session.chord.name}.`:`Monte ${session.chord.name}.`;
       buildHelp();
-      neutralScene(`Monte ${session.chord.name}`, 'ENCONTRE AS NOTAS DO ACORDE');
+      neutralScene(session.instrument==='bass'?`Arpejo de ${session.chord.name}`:`Monte ${session.chord.name}`, 'ENCONTRE AS NOTAS DO ACORDE');
     } else if (session.type === 'field') {
-      const d = random([1, 2, 3, 4, 5, 6, 7].filter(n => n !== session.last)); session.last = d; session.expected = d;
+      const d = nextFrom([1,2,3,4,5,6,7],'field'); session.last = d; session.expected = d;
       session.field = field($('practice-field-format').value === 'seventh'); session.chord = session.field[d - 1];
       $('question').textContent = `Qual acorde é o ${d}º grau?`;
       $('question-help').textContent = `${ns[0].name} ${$('scale').value.toLowerCase()} · ${$('practice-field-format').value === 'seventh' ? 'com sétima' : 'tríades'}. Selecione, ouça e confirme.`;
       neutralScene('Escolha um acorde', 'CAMPO HARMÔNICO');
       choices = session.field.map((chord, i) => ({ value: i + 1, title: chord.name, chord }));
     } else {
-      const pool = $('ear-level').value === 'all' ? Array.from({ length: 12 }, (_, i) => i + 1) : [2, 3, 4, 5, 7, 12];
-      session.expected = random(pool.filter(n => n !== session.last)); session.last = session.expected;
-      session.base = session.reference === 'guitar' ? G.ascendingPath(scale(), 0)[0].midi : 48 + key();
+      const pool = session.difficulty===1?[2,4,7,12]:session.difficulty===3||$('ear-level').value==='all'?Array.from({length:12},(_,i)=>i+1):[2,3,4,5,7,12];
+      session.expected = nextFrom(pool,'ear'); session.last = session.expected;
+      session.base = session.reference === 'bass' ? B.ascendingPath(scale(),B.region(key()))[0].midi : session.reference === 'guitar' ? G.ascendingPath(scale(), 0)[0].midi : 48 + key();
       $('question').textContent = 'Qual é a distância entre as duas notas?';
       $('question-help').textContent = `Referência fixa: ${T.label(ns[0].name, 'solfege')} (${ns[0].name}). Ouça o desafio; cada opção toca um exemplo a partir da mesma nota. Depois confirme.`;
+      if(session.policy==='challenge')$('question-help').textContent=`Referência fixa: ${T.label(ns[0].name,'solfege')} (${ns[0].name}). Repita o alvo se precisar. As alternativas não tocam nem revelam posições antes da confirmação.`;
       neutralScene('Ouça e compare', 'DISTÂNCIA ENTRE NOTAS');
       choices = shuffle([session.expected, ...shuffle(pool.filter(n => n !== session.expected)).slice(0, 3)]).map(n => ({ value: n, title: T.INTERVALS[n], subtitle: T.distance(n) }));
     }
+    if(session.policy==='challenge'&&['degrees','field'].includes(session.type))$('question-help').textContent='Selecione e confirme. O exemplo e a explicação aparecem depois da tentativa.';
     session.choices = choices;
     for (const choice of choices) {
       const b = button(choice.title, () => previewChoice(choice)); b.dataset.answer = choice.value; b.setAttribute('aria-pressed', 'false');
@@ -239,7 +264,7 @@
   }
   function intervalNotes(distance) {
     const pair = [{ midi: session.base }, { midi: session.base + distance }];
-    return session.reference === 'guitar' ? pair.map(n => guitarLocation(n.midi)) : pair;
+    return session.reference==='bass'?pair.map(n=>B.location(n.midi,bassPosition())):session.reference === 'guitar' ? pair.map(n => guitarLocation(n.midi)) : pair;
   }
   function showInterval(distance, caption) {
     const pair = intervalNotes(distance);
@@ -254,6 +279,7 @@
     if (!session) return;
     if (!session.answered) { session.choice = choice.value; $('confirm-answer').disabled = false; }
     $('answers').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(Number(b.dataset.answer) === choice.value)));
+    if(session.policy==='challenge'&&!session.answered)return;
     if (session.type === 'ear') showInterval(choice.value, 'EXEMPLO DA SUA ESCOLHA');
     else if (choice.chord) { showChord(choice.chord, 'EXEMPLO DA SUA ESCOLHA'); playChord(choice.chord); }
     else { const n = noteLocation(choice.note.pc); showSingle(n); $('scene-title').textContent = T.label(choice.note.name, 'solfege'); }
@@ -268,9 +294,12 @@
         const pair = intervalNotes(session.expected); cancelAudition(); pair.forEach((n, i) => midiNote(n, i * .65, session.reference));
         scene.selected = [{ ...pair[0], instrument: session.reference }]; draw(); $('live-note').textContent = `Primeira nota: ${T.label(scale()[0].name, 'solfege')}. A segunda é a que você vai identificar.`;
       }
+    } else if(session.type==='scales'){
+      const notes=session.reference==='bass'?bassScalePath():session.reference==='guitar'?G.ascendingPath(scale(),position()):[...scale().map(n=>({midi:48+key()+n.offset})),{midi:60+key()}];
+      if(session.policy==='challenge'&&!session.answered){cancelAudition();notes.forEach((n,i)=>midiNote(n,i*.4,session.reference));}else playSeries(notes,.4,session.reference,false);
     } else if (session.type === 'build') {
       // Sound is a model; the diagram remains hidden until an answer is checked.
-      const selection = Object.values(session.selections).flat(); cancelAudition(); chordPitches(session.chord, session.reference).forEach((n, i) => midiNote(n, i * .1, session.reference));
+      const selection = Object.values(session.selections).flat(); cancelAudition(); chordPitches(session.chord, session.reference).forEach((n, i) => midiNote(n, i * (session.reference==='bass'?.28:.1), session.reference));
       scene.selected = selection; draw();
     }
   }
@@ -285,13 +314,14 @@
   function grade(correct, explanation) {
     if (!session || session.answered) return;
     session.answered = true; session.completed++; if (correct) { session.correct++; stats.correct++; }
-    stats.attempts++; if (session.completed === 10) stats.sessions++;
+    stats.attempts++; if (session.completed === session.length) stats.sessions++;
+    progress.record({skill:skillOf(session.type,session.answerSource||session.instrument),instrument:session.answerSource||(['ear','field','degrees'].includes(session.type)?session.reference:session.instrument),correct,difficulty:session.difficulty,session:session.progressId,question:session.type+':'+key()+':'+(session.expected??session.chord?.name??'scale')});
     save(statsKey, stats); updateStats();
     $('session-progress').value = session.completed;
-    $('session-label').textContent = `${session.completed}/10 respondidas · ${session.correct} acertos`;
+    $('session-label').textContent = `${session.completed}/${session.length} respondidas · ${session.correct} acertos`;
     showResult($('feedback'), $('practice-panel'), correct, explanation);
     $('confirm-answer').hidden = true; $('next-question').hidden = false;
-    $('next-question').textContent = session.completed === 10 ? 'Ver resultado →' : 'Próxima →';
+    $('next-question').textContent = session.completed === session.length ? 'Ver resultado →' : 'Próxima →';
     $('answers').querySelectorAll('button').forEach(b => {
       b.classList.toggle('correct', Number(b.dataset.answer) === session.expected);
       b.classList.toggle('wrong', !correct && Number(b.dataset.answer) === session.choice);
@@ -299,6 +329,13 @@
   }
   function confirmAnswer() {
     if (!session || session.answered) return;
+    if(session.type==='scales'||session.type==='build'&&session.instrument==='bass'){
+      const expected=session.type==='scales'?[...scale().map(n=>n.offset),12]:session.chord.intervals;
+      const played=session.selection.map(n=>n.midi), tonic=session.type==='scales'?key():session.chord.root;
+      const correct=played.length===expected.length&&T.mod(played[0])===tonic&&expected.every((offset,i)=>played[i]-played[0]===offset);
+      grade(correct,session.type==='scales'?'A escala sobe grau a grau e termina na mesma nota uma oitava acima. Esperado: '+scale().map(n=>n.name).join(' → ')+' → '+scale()[0].name+'.':'Arpejo de '+session.chord.name+': '+session.chord.notes.map(n=>n.name+' ('+n.role+')').join(' → ')+'. Toque uma nota por vez, em ordem ascendente.');
+      $('show-example').hidden=session.type!=='build';return;
+    }
     if (session.type === 'build') {
       const chosen = session.selection.map(n => T.mod(n.midi)), target = session.chord;
       const required = session.instrument === 'guitar' ? T.requiredNotes(target) : target.notes;
@@ -317,25 +354,30 @@
     else { const n = session.targetNote; grade(correct, `${n.degree}º grau: ${T.label(n.name, 'solfege')} (${n.name}).`); showSingle(noteLocation(n.pc)); }
   }
   function buildHelp() {
+    if(session?.type==='scales')return;
     if (!session?.chord || session.type !== 'build') return;
+    $('question').textContent=session.instrument==='bass'?'Toque o arpejo de '+session.chord.name+'.':'Monte '+session.chord.name+'.';
+    if(scene?.kind==='custom')$('scene-title').textContent=$('question').textContent;
+    if(session.policy==='challenge'&&session.instrument!=='bass'){$('question-help').textContent='Tente formar o acorde antes de consultar o exemplo. Você pode ouvir novamente e confirmar sua montagem.';return;}
+    if(session.instrument==='bass'){ $('question').textContent='Toque o arpejo de '+session.chord.name+'.';$('question-help').textContent='Uma nota por vez, da tônica até a última nota. '+(session.policy==='learn'?'Graus: '+session.chord.roles.join(' → ')+'. ':'')+'Você pode usar a mesma corda várias vezes.';return;}
     const required = session.instrument === 'guitar' ? T.requiredNotes(session.chord) : session.chord.notes;
     $('question-help').textContent = `Montando no ${session.instrument === 'guitar' ? 'violão, uma casa por corda' : 'teclado, selecione as notas'}. Graus obrigatórios: ${required.map(n => n.role).join(' · ')}. Clique no outro instrumento para trocar.`;
   }
   function switchAnswerInstrument(source, reveal = false) {
-    if (!session || session.type !== 'build' || session.answered) return;
+    if (!session || !['build','scales'].includes(session.type) || session.answered) return;
     session.selections[session.instrument] = session.selection;
     session.instrument = source; session.selection = session.selections[source];
     $('answer-instrument').value = source; buildHelp();
     scene.selected = Object.values(session.selections).flat();
     $('confirm-answer').disabled = !session.selection.length;
-    if (reveal && $('instrument').value !== 'both') { $('instrument').value = source; syncPracticeView(); }
+    if (reveal && visibleInstruments().length===1) { $('instrument').value = source; syncPracticeView(); }
     draw();
   }
   function changeReference() {
     if (!session) return;
     stopAudio(); session.reference = $('reference-instrument').value;
     if (session.type === 'ear') {
-      session.base = session.reference === 'guitar' ? G.ascendingPath(scale(), 0)[0].midi : 48 + key();
+      session.base = session.reference === 'bass' ? B.ascendingPath(scale(),B.region(key()))[0].midi : session.reference === 'guitar' ? G.ascendingPath(scale(), 0)[0].midi : 48 + key();
       session.choice = null;
       $('answers').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', 'false'));
       if (!session.answered) $('confirm-answer').disabled = true;
@@ -344,13 +386,19 @@
     else if (session.choice !== null) previewChoice(session.choices.find(c => c.value === session.choice));
   }
   function instrumentClick(n) {
+    if(mode==='lesson'){window.dispatchEvent(new CustomEvent('studio:note',{detail:n}));return;}
+    if(session&&!session.answered&&session.policy==='challenge'&&['ear','degrees','field'].includes(session.type))return;
+    if(session&&!session.answered&&(session.type==='scales'||session.type==='build'&&sourceOf(n)==='bass')){
+      if(sourceOf(n)!==session.instrument)switchAnswerInstrument(sourceOf(n));
+      cancelAudition();midiNote(n,0,sourceOf(n));session.selection.push({...n,instrument:sourceOf(n)});session.selections[session.instrument]=session.selection;scene.selected=Object.values(session.selections).flat();draw();$('confirm-answer').disabled=false;$('live-note').textContent='Sequência: '+session.selection.map(describeNote).join(' → ');return;
+    }
     if (session && !session.answered && session.type === 'notes') {
-      showSingle(n); const correct = T.mod(n.midi) === session.expected;
+      session.answerSource=sourceOf(n); showSingle(n); const correct = T.mod(n.midi) === session.expected;
       grade(correct, `${session.targetNote.name} é o ${session.targetNote.degree}º grau desta escala.`);
       scene.hideLabels = false; scene.kind = 'scale'; scene.scale = [{ ...session.targetNote, degree: 1 }]; scene.selected = [n]; draw(); return;
     }
     if (session && !session.answered && session.type === 'build') {
-      const source = n.string === undefined ? 'piano' : 'guitar';
+      const source = sourceOf(n);
       if (source !== session.instrument) switchAnswerInstrument(source);
       cancelAudition(); midiNote(n, 0, source);
       const existing = session.selection.some(x => source === 'guitar' ? x.string === n.string && x.fret === n.fret : x.midi === n.midi);
@@ -369,6 +417,7 @@
     return (minor ? ROMAN[index].toLowerCase() : ROMAN[index]) + (chord.type === 'dim' ? '°' : chord.type === 'halfDim' ? 'ø' : '');
   }
   function showGuidedPreview(index = 0) {
+    if(visibleInstruments().includes('bass')&&$('bass-pattern').value==='seventh')$('guided-format').value='seventh';
     clearPalettes();
     const pattern = sequences[$('guided-sequence').value], chords = field($('guided-format').value === 'seventh');
     [...$('guided-sequence').options].forEach(o => { if (o.value !== 'all') o.textContent = sequences[o.value].map(d => roman(chords[d - 1], d - 1)).join(' → ') + ' · ' + sequences[o.value].join('–'); });
@@ -384,6 +433,7 @@
   }
   function stopGuided() {
     if (guided) guided.token++;
+    if(guided)progress.end(guided.progressId,false);
     guided = null; document.body.classList.remove('guiding'); stopAudio(); $('guided-setup').hidden = false; $('guided-session').hidden = true; lockMain(false);
     $('beats').querySelectorAll('i').forEach(el => el.classList.remove('active'));
   }
@@ -391,13 +441,14 @@
     endPractice();
     const pattern = sequences[$('guided-sequence').value];
     guided = { index: 0, degrees: Array.from({ length: Number($('guided-cycles').value) }, () => pattern).flat(), token: 0 };
+    guided.progressId=progress.begin('progressions',visibleInstruments()[0],'guided',Number($('bass-pattern').selectedIndex)+1);
     document.body.classList.add('guiding'); $('guided-setup').hidden = true; $('guided-session').hidden = false; lockMain(true); guidedRound();
   }
   async function guidedRound() {
     if (!guided) return;
     const run = guided, token = ++run.token;
     cancelAudition();
-    const c = field($('guided-format').value === 'seventh')[run.degrees[run.index] - 1];
+    const c = field($('guided-format').value === 'seventh'||visibleInstruments().includes('bass')&&$('bass-pattern').value==='seventh')[run.degrees[run.index] - 1];
     clearPalettes(); showChord(c, 'TOQUE NO RITMO', c.name, `Grau ${run.degrees[run.index]} · ${c.notes.map(n => n.name).join(' · ')}. Acorde e metrônomo entram juntos no tempo 1.`);
     $('guided-question').textContent = `Toque ${c.name}`;
     $('guided-count').textContent = `${run.index + 1} de ${run.degrees.length}`;
@@ -407,6 +458,8 @@
     const tempo = 60 / Math.max(40, Math.min(160, Number($('bpm').value) || 60));
     const everyBeat = $('guided-every-beat').checked;
     const parts = visibleInstruments().map(instrument => ({ instrument, notes: chordPitches(c, instrument).map(n => ({ ...n, instrument })) }));
+    const bassLine=B.line(c,$('bass-pattern').value,bassPosition());
+    if(visibleInstruments().includes('bass')){scene.bassLine={notes:bassLine,pattern:$('bass-pattern').selectedOptions[0].textContent};draw();}
     let ctx;
     try { ctx = soundEngine.init(); if (ctx.state === 'suspended') await ctx.resume(); }
     catch (_) { $('audio-status').textContent = 'Áudio indisponível; acompanhe os tempos na tela.'; }
@@ -416,14 +469,14 @@
     if (ctx) for (let beat = 0; beat < 4; beat++) {
       const at = audioStart + beat * tempo;
       soundEngine.tick(beat === 0, 0, at);
-      if (beat === 0 || everyBeat) for (const part of parts) for (const note of part.notes) midiNote(note, 0, part.instrument, at);
+      for(const part of parts){if(part.instrument==='bass'){midiNote(bassLine[beat%bassLine.length],0,'bass',at);}else if(beat===0||everyBeat)for(const note of part.notes)midiNote(note,0,part.instrument,at);}
     }
     for (let beat = 0; beat < 4 && active(); beat++) {
       await new Promise(resolve => setTimeout(resolve, Math.max(0, wallStart + beat * tempo * 1000 - performance.now())));
       if (!active()) return;
-      $('guided-phase').textContent = `Sua vez: toque ${c.name}. ${everyBeat ? 'Acorde nos quatro tempos.' : 'Acorde no tempo 1.'}`;
+      $('guided-phase').textContent = visibleInstruments().includes('bass')?`Sua vez: ${c.name}. Baixo: uma nota por tempo. ${$('bass-pattern').selectedOptions[0].textContent}.`:`Sua vez: toque ${c.name}. ${everyBeat ? 'Acorde nos quatro tempos.' : 'Acorde no tempo 1.'}`;
       $('beats').querySelectorAll('i').forEach((el, i) => el.classList.toggle('active', i === beat));
-      scene.selected = beat === 0 || everyBeat ? parts.flatMap(p => p.notes) : []; draw();
+      scene.selected = parts.flatMap(p=>p.instrument==='bass'?[bassLine[beat%bassLine.length]]:beat===0||everyBeat?p.notes:[]); draw();
     }
     await new Promise(resolve => setTimeout(resolve, Math.max(0, wallStart + 4 * tempo * 1000 - performance.now())));
     if (!active()) return;
@@ -435,7 +488,7 @@
     if (!guided) return;
     if (guided.index + 1 < guided.degrees.length) { guided.index++; guidedRound(); }
     else {
-      guided.token++; cancelAudition();
+      guided.token++; progress.end(guided.progressId,true); cancelAudition();
       $('guided-question').textContent = 'Sequência concluída!'; $('guided-phase').textContent = 'Você pode repetir a sequência ou encerrar. O último acorde continua no instrumento.';
       $('next-guided').textContent = 'Recomeçar sequência'; guided.index = -1;
     }
@@ -445,6 +498,7 @@
   function cycleVoicings(chord, previous) {
     return {
       chord, previousChord: previous?.chord,
+      bass: {notes:B.arpeggio(chord,bassPosition()),pitches:B.arpeggio(chord,bassPosition()).map(n=>n.midi)},
       piano: { pitches: T.leadPiano(chord, previous?.piano.pitches, $('piano-layout').value), previous: previous?.piano.pitches },
       guitar: { ...G.leadTriad(chord, previous?.guitar, $('cycle-direction').value), previous: previous?.guitar.pitches, previousFrets: previous?.guitar.frets }
     };
@@ -476,9 +530,10 @@
     if (token === cyclePlayback) $('stop-cycle').hidden = true;
   }
   function endCycleExercise(message = '') {
+    if(cycleSession)progress.end(cycleSession.progressId,cycleSession.completed===12);
     cycleSession = null; stopCyclePlayback(); $('cycle-exercise').hidden = true; $('cycles-setup').hidden = false;
     document.body.classList.remove('cycling'); $('cycle-view-label').hidden = true;
-    $('cycle-direction').disabled = false; $('cycles-panel').removeAttribute('data-result'); lockMain(false);
+    $('cycle-direction').disabled = false;$('cycle-policy').disabled=false; $('cycles-panel').removeAttribute('data-result'); lockMain(false);
     $('cycle-playback-status').textContent = message;
   }
   function cycleQuestion() {
@@ -501,6 +556,7 @@
         if (s !== cycleSession) return;
         if (!s.answered) { s.choice = note.pc; $('confirm-cycle').disabled = false; }
         $('cycle-answers').querySelectorAll('button').forEach(el => el.setAttribute('aria-pressed', String(el === b)));
+        if($('cycle-policy').value==='challenge'&&!s.answered)return;
         showCycleChord(note, 'EXEMPLO DA SUA ESCOLHA', cycleVoicings(cycleChord(note), s.anchor)); playChord(cycleChord(note));
       });
       b.dataset.pc = note.pc; b.setAttribute('aria-pressed', 'false'); b.classList.toggle('altered', /[#b]/.test(note.name)); $('cycle-answers').append(b);
@@ -513,6 +569,7 @@
     const from = s.notes[s.completed], to = s.notes[(s.completed + 1) % 12], correct = s.choice === s.expected;
     s.answered = true; s.completed++; stats.attempts++; if (correct) { s.correct++; stats.correct++; }
     if (s.completed === 12) stats.sessions++;
+    progress.record({skill:'cycles',instrument:auditionInstruments()[0],correct,difficulty:2,session:s.progressId,question:$('cycle-direction').value+':'+from.pc});
     save(statsKey, stats); updateStats();
     showResult($('cycle-feedback'), $('cycles-panel'), correct, `${from.name} → ${to.name}: ${$('cycle-direction').value === 'fourths' ? 'quarta justa, 5 semitons' : 'quinta justa, 7 semitons'}.`);
     $('confirm-cycle').hidden = true; $('next-cycle-question').hidden = false; $('next-cycle-question').textContent = s.completed === 12 ? 'Ver resultado →' : 'Próxima →';
@@ -525,10 +582,11 @@
     ['explore', 'practice', 'guided', 'cycles'].forEach(m => $(m + '-panel').hidden = m !== mode);
     syncPracticeView();
     document.querySelectorAll('[data-mode]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === mode)));
+    window.dispatchEvent(new CustomEvent('studio:mode',{detail:mode}));
     $('settings').open = false; if (mode === 'guided') showGuidedPreview(); else if (mode === 'cycles') showCyclePreview(); else showExplore();
   }
   function playScene(instrument) {
-    if (session && !session.answered && ['ear', 'build'].includes(session.type)) {
+    if (session && !session.answered && ['ear', 'build','scales'].includes(session.type)) {
       if (instrument && session.reference !== instrument) { $('reference-instrument').value = instrument; saveSettings(); changeReference(); return; }
       playTarget(); return;
     }
@@ -536,7 +594,7 @@
     if (scene.kind === 'chord') playChord(scene.chord, instruments);
     else if (scene.kind === 'scale' && scene.scale.length === 7) {
       playArrangement(instruments.map(source => {
-        const path = source === 'guitar' ? G.ascendingPath(scene.scale, position()) : [];
+        const path = source === 'bass' ? bassScalePath() : source === 'guitar' ? G.ascendingPath(scene.scale, position()) : [];
         const notes = path.length ? path : [...scene.scale.map(n => ({ midi: 48 + scene.scale[0].pc + n.offset })), { midi: 60 + scene.scale[0].pc }];
         return { instrument: source, notes };
       }), .4, false);
@@ -551,13 +609,13 @@
   if (saved && typeof saved === 'object') for (const id of settingIds) {
     const el = $(id);
     if (el.tagName === 'SELECT' && [...el.options].some(o => o.value === saved[id])) el.value = saved[id];
-    if (['volume', 'guitar-volume', 'piano-volume', 'feedback-volume'].includes(id) && Number.isFinite(Number(saved[id]))) el.value = Math.max(0, Math.min(100, Number(saved[id])));
+    if (['volume', 'guitar-volume', 'piano-volume', 'bass-volume', 'feedback-volume'].includes(id) && Number.isFinite(Number(saved[id]))) el.value = Math.max(0, Math.min(100, Number(saved[id])));
     if (el.type === 'checkbox' && typeof saved[id] === 'boolean') el.checked = saved[id];
   }
   const oldStats = read(statsKey);
   if (oldStats && ['attempts', 'correct', 'sessions'].every(k => Number.isSafeInteger(oldStats[k]) && oldStats[k] >= 0) && oldStats.correct <= oldStats.attempts) stats = oldStats;
   $('volume-value').textContent = $('volume').value + '%'; soundEngine.setVolume(Number($('volume').value) / 100);
-  for (const channel of ['guitar', 'piano', 'feedback']) {
+  for (const channel of ['guitar', 'piano', 'bass', 'feedback']) {
     soundEngine.setVolume(Number($(channel + '-volume').value) / 100, channel);
     $(channel + '-volume-value').textContent = $(channel + '-volume').value === '0' ? 'Mudo' : $(channel + '-volume').value + '%';
   }
@@ -568,13 +626,17 @@
     if (['practice-view', 'cycle-view'].includes(el.id)) $('instrument').value = el.value;
     if (['instrument', 'practice-view', 'cycle-view'].includes(el.id)) {
       stopAudio(); syncPracticeView();
-      if (session?.type === 'build' && $('instrument').value !== 'both') switchAnswerInstrument($('instrument').value);
+      if (['build','scales'].includes(session?.type) && visibleInstruments().length===1) switchAnswerInstrument($('instrument').value);
     }
     if (el.id === 'answer-instrument') { stopAudio(); switchAnswerInstrument(el.value, true); return; }
     if (el.id === 'reference-instrument') { saveSettings(); changeReference(); return; }
     if (settingIds.includes(el.id) || ['practice-view', 'cycle-view'].includes(el.id)) saveSettings();
     if (el.id === 'exercise-type') { exerciseHelp(); return; }
-    if (['exercise-chord-type', 'practice-field-format', 'ear-level'].includes(el.id)) return;
+    if (['exercise-chord-type', 'practice-field-format', 'ear-level','practice-policy','practice-length','practice-difficulty','cycle-policy'].includes(el.id)) return;
+    if(el.id==='bass-region')delete scene.bassRegion;
+    if(el.id==='guided-format'&&el.value==='triad'&&$('bass-pattern').value==='seventh'){$('bass-pattern').value='triad';saveSettings();}
+    if(el.id==='bass-pattern'&&el.value==='seventh')$('guided-format').value='seventh';
+    if(mode==='lesson'){window.dispatchEvent(new Event('studio:lesson-render'));return;}
     if (['guided-sequence', 'guided-format', 'guided-cycles'].includes(el.id)) { if (!guided) showGuidedPreview(); return; }
     if (!guided) stopAudio();
     if (cycleSession) {
@@ -593,11 +655,11 @@
       if (['key', 'scale', 'cycle-direction', 'piano-layout'].includes(el.id)) showCyclePreview(); else draw();
       return;
     }
-    if (session) { if (session.type === 'build') buildHelp(); draw(); return; }
+    if (session) { if (['build','scales'].includes(session.type)) buildHelp(); draw(); return; }
     if (guided) { guidedRound(); return; }
     if (mode === 'guided') showGuidedPreview(); else if (mode === 'cycles') showCyclePreview(); else showExplore();
   }));
-  for (const id of ['volume', 'guitar-volume', 'piano-volume', 'feedback-volume']) $(id).addEventListener('input', () => {
+  for (const id of ['volume', 'guitar-volume', 'piano-volume', 'bass-volume', 'feedback-volume']) $(id).addEventListener('input', () => {
     const channel = id === 'volume' ? undefined : id.split('-')[0];
     soundEngine.setVolume(Number($(id).value) / 100, channel);
     $(id + '-value').textContent = $(id).value === '0' ? 'Mudo' : $(id).value + '%'; saveSettings();
@@ -608,6 +670,7 @@
   $('play-scene').addEventListener('click', () => playScene());
   $('play-guitar').addEventListener('click', () => playScene('guitar'));
   $('play-piano').addEventListener('click', () => playScene('piano'));
+  $('play-bass').addEventListener('click',()=>playScene('bass'));
   $('start-exercise').addEventListener('click', startPractice);
   $('end-exercise').addEventListener('click', () => endPractice('Treino encerrado. Os acertos já registrados foram mantidos.'));
   $('confirm-answer').addEventListener('click', confirmAnswer);
@@ -621,7 +684,7 @@
   $('stop-guided').addEventListener('click', () => { stopGuided(); showGuidedPreview(); });
   $('play-cycle').addEventListener('click', playFullCycle);
   $('stop-cycle').addEventListener('click', () => { stopCyclePlayback(); stopAudio(); });
-  $('start-cycle-exercise').addEventListener('click', () => { stopCyclePlayback(); cycleSession = { notes: cycleNotes(), completed: 0, correct: 0 }; document.body.classList.add('cycling'); $('cycle-view-label').hidden = false; syncPracticeView(); $('cycles-setup').hidden = true; $('cycle-exercise').hidden = false; $('cycle-direction').disabled = true; lockMain(true); cycleQuestion(); });
+  $('start-cycle-exercise').addEventListener('click', () => { stopCyclePlayback(); cycleSession = { notes: cycleNotes(), completed: 0, correct: 0,progressId:progress.begin('cycles',auditionInstruments()[0],$('cycle-policy').value,2) }; document.body.classList.add('cycling'); $('cycle-view-label').hidden = false; syncPracticeView(); $('cycles-setup').hidden = true; $('cycle-exercise').hidden = false; $('cycle-direction').disabled = true;$('cycle-policy').disabled=true; lockMain(true); cycleQuestion(); });
   $('confirm-cycle').addEventListener('click', confirmCycle);
   $('next-cycle-question').addEventListener('click', cycleQuestion);
   $('end-cycle-exercise').addEventListener('click', () => { endCycleExercise('Treino encerrado; respostas registradas foram mantidas.'); stopAudio(); showCyclePreview(); });
@@ -629,7 +692,7 @@
   $('workspace').addEventListener('click', event => {
     const target = event.target.closest('[data-midi]');
     if (!target) return;
-    const n = { midi: Number(target.dataset.midi) };
+    const n = { midi: Number(target.dataset.midi),instrument:target.dataset.instrument||(target.dataset.string!==undefined?'guitar':'piano') };
     if (target.dataset.string !== undefined) { n.string = Number(target.dataset.string); n.fret = Number(target.dataset.fret); }
     instrumentClick(n);
   });
@@ -640,5 +703,7 @@
   document.addEventListener('click', event => { if (!$('settings').contains(event.target)) $('settings').open = false; });
   document.addEventListener('visibilitychange', () => { if (document.hidden) { if (guided) stopGuided(); stopCyclePlayback(); stopAudio(); } });
   $('guide-link').addEventListener('click', () => { if (mode !== 'explore') setMode('explore'); $('explore-panel').querySelector('details').open = true; });
+  window.Studio={hidden:pcs=>{cancelAudition();for(const instrument of visibleInstruments())pcs.forEach((pc,i)=>midiNote(noteLocation(pc,instrument),i*.65,instrument));},setMode,startPractice,compare:name=>{comparisonFocus=name;draw();},stop:()=>{endPractice();stopGuided();endCycleExercise();stopAudio();},lesson:(lessonScene)=>{mode='lesson';clearPalettes();scene=lessonScene;scene.scale ||= scale();$('scene-title').textContent=scene.title||'Demonstração';$('scene-category').textContent='APRENDER · OUVIR E TOCAR';$('scene-description').textContent=scene.description||'';$('play-scene').disabled=true;draw();},lessonPlay:(pcs,chordType)=>{if(chordType){const chord=T.buildChord(pcs[0],chordType);showChord(chord,'DEMONSTRAÇÃO');playChord(chord);}else{playArrangement(visibleInstruments().map(instrument=>({instrument,notes:pcs.map(pc=>noteLocation(pc,instrument))})),.5,false);}},select:n=>showSingle(n),render:draw,getInstrument:()=>visibleInstruments().includes(comparisonFocus)?comparisonFocus:visibleInstruments()[0]};
+  window.addEventListener('resize',()=>{if(scene)draw();});
   exerciseHelp(); updateStats(); showExplore();
 })();

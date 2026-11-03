@@ -10,18 +10,17 @@
     return type === 'degrees' ? (note?.role || note?.degree || '·') : T.label(note?.name || pcName(pc), type);
   }
   function sourceOf(n) { return n.instrument || (n.string === undefined ? 'piano' : 'guitar'); }
-  function chosen(scene, midi, string, fret) {
-    const instrument = string === undefined ? 'piano' : 'guitar';
+  function chosen(scene, midi, string, fret, instrument = string === undefined ? 'piano' : 'guitar') {
     return scene.selected?.some(n => sourceOf(n) === instrument && (instrument === 'piano' ? n.midi === midi : n.string === string && n.fret === fret));
   }
-  function classes(scene, pc, midi, string, fret, active) {
+  function classes(scene, pc, midi, string, fret, active, instrument = string === undefined ? 'piano' : 'guitar') {
     const rootPc = scene.chord?.root ?? scene.scale?.[0].pc;
-    const voice = scene.voicings?.[string === undefined ? 'piano' : 'guitar'];
+    const voice = scene.voicings?.[instrument];
     const index = voice?.pitches.indexOf(midi);
-    const inVoicing = index >= 0 && (string === undefined || voice.frets[string] === fret);
+    const inVoicing = index >= 0 && (string === undefined || voice.frets?.[string] === fret);
     const motion = inVoicing && voice.previous ? voice.previous[index] === midi ? 'voice-held' : 'voice-moved' : '';
     const extension = !scene.hideLabels && T.isColorTone(scene.chord?.notes.find(n => n.pc === pc));
-    return `${motion} ${extension ? 'extension' : ''} ${!scene.hideLabels && /[#b]/.test(noteName(pc, scene)) ? 'altered' : ''} ${active ? (pc === rootPc ? 'root' : 'active') : ''} ${chosen(scene, midi, string, fret) ? 'chosen' : ''}`;
+    return `${motion} ${extension ? 'extension' : ''} ${!scene.hideLabels && /[#b]/.test(noteName(pc, scene)) ? 'altered' : ''} ${active ? (pc === rootPc ? 'root' : 'active') : ''} ${chosen(scene, midi, string, fret, instrument) ? 'chosen' : ''}`;
   }
   function renderPiano(scene, options) {
     const pitches = scene.voicings?.piano.pitches || (scene.kind === 'chord' ? T.pianoVoicing(scene.chord, options.inversion, options.pianoLayout) : scene.pitchesByInstrument?.piano || []);
@@ -69,7 +68,7 @@
       if (fret === null) { svg += `<text x="${x}" y="29">×</text><text x="${x}" y="205">–</text>`; continue; }
       const midi = G.TUNING[s] + fret, pc = midi % 12, y = fret === 0 ? 24 : 46 + (fret - first + .5) * 34;
       const text = label(pc, scene, options.labels);
-      svg += `<g id="chord-string-${s}" role="button" tabindex="0" data-midi="${midi}" data-string="${s}" data-fret="${fret}" aria-label="Corda ${6 - s}, ${fret === 0 ? 'solta' : 'casa ' + fret}, ${escape(T.label(noteName(pc, scene), 'solfege'))}" class="${classes(scene, pc, midi, s, fret, true)}"><circle class="note-circle${fret === 0 ? ' open-note' : ''}" cx="${x}" cy="${y}" r="11"/><text class="dot-label" x="${x}" y="${y + 3.5}">${fret === 0 ? '○' : escape(text)}</text></g><text x="${x}" y="205">${escape(text)}</text>`;
+      svg += `<g id="chord-string-${s}" role="button" tabindex="0" data-midi="${midi}" data-string="${s}" data-fret="${fret}" aria-label="Corda ${6 - s}, ${fret === 0 ? 'solta' : 'casa ' + fret}, ${escape(T.label(noteName(pc, scene), 'solfege'))}" class="${classes(scene, pc, midi, s, fret, true)}"><circle class="touch-target" fill="transparent" cx="${x}" cy="${y}" r="17"/><circle class="note-circle${fret === 0 ? ' open-note' : ''}" cx="${x}" cy="${y}" r="11"/><text class="dot-label" x="${x}" y="${y + 3.5}">${fret === 0 ? '○' : escape(text)}</text></g><text x="${x}" y="205">${escape(text)}</text>`;
     }
     svg += '</svg>';
     const omitted = v.omitted.length ? `Omitidas nesta posição: ${v.omitted.map(n => `${n.role} (${n.name})`).join(', ')}. A fórmula completa está acima.` : 'Todas as notas da fórmula estão nesta posição.';
@@ -122,22 +121,55 @@
     $('guitar-render').innerHTML = html;
     $('guitar-description').textContent = scene.hideLabels ? 'Escolha as casas no braço. Uma posição por corda; nas escalas, a corda 1 fica no topo, como na tablatura.' : `${all ? 'Mapa completo · casas 0–12' : `Posição de estudo · casas ${start}–${end}`} · 1ª corda (mais fina) no topo. ${scene.kind === 'scale' ? 'Lilás: tônica. Toque as notas em ordem com “Ouvir escala”.' : scene.pitches?.length === 2 ? 'As duas notas do exemplo estão em amarelo.' : scene.kind === 'custom' ? 'Toque para selecionar e ouvir. Para montar acordes, use uma casa por corda.' : 'Explore as notas para escolher uma posição do acorde.'}`;
   }
+  function renderBass(scene, options) {
+    const B = BassTheory, selected = (scene.selected || []).filter(n=>sourceOf(n)==='bass');
+    const path = scene.kind==='chord' ? (scene.bassLine?.notes || scene.voicings?.bass?.notes || B.arpeggio(scene.chord,options.bassPosition)) : [];
+    let start = scene.bassRegion ?? options.bassPosition;
+    let end = Math.min(B.MAX_FRET,start+4);
+    if(options.bassAll){start=0;end=B.MAX_FRET;}
+    else {
+      const locations=[...selected,...path];
+      if(locations.length){start=Math.min(start,...locations.map(n=>n.fret));end=Math.max(end,...locations.map(n=>n.fret));}
+    }
+    const notes=scene.bassLine?scene.bassLine.notes.map(n=>scene.chord.notes.find(t=>t.pc===T.mod(n.midi))):scene.kind==='custom'?[]:scene.chord?.notes||scene.scale||[];
+    let html=`<div class="guitar-scroll"><div class="fretboard bass-board" style="--frets:${end-start+1};--board-min:${28+(end-start+1)*45}px">`;
+    for(let string=3;string>=0;string--){
+      html+=`<span class="string-name">${4-string}ª ${['E','A','D','G'][string]}</span>`;
+      for(let fret=start;fret<=end;fret++){
+        const midi=B.TUNING[string]+fret,pc=T.mod(midi),active=!scene.hideLabels&&(notes.some(n=>n.pc===pc)||scene.pitchesByInstrument?.bass?.includes(midi));
+        html+=`<span class="fret-cell${fret===0?' nut':''}"><button id="bass-${string}-${fret}" type="button" data-instrument="bass" data-midi="${midi}" data-string="${string}" data-fret="${fret}" class="${classes(scene,pc,midi,string,fret,active,'bass')}" aria-pressed="${!!chosen(scene,midi,string,fret,'bass')}" aria-label="Baixo, corda ${4-string}, casa ${fret}${scene.hideLabels?'':', '+escape(T.label(noteName(pc,scene),'solfege'))}">${scene.hideLabels?'':escape(label(pc,scene,options.labels))}</button></span>`;
+      }
+    }
+    html+='<span></span>';for(let fret=start;fret<=end;fret++)html+=`<span class="fret-number">${fret}</span>`;
+    $('bass-render').innerHTML=html+'</div></div>';
+    $('bass-description').textContent=`Casas ${start}–${end} · 1ª corda (Sol) no topo. ${scene.bassLine?'Linha: '+scene.bassLine.pattern+'. Uma nota por tempo.':scene.kind==='chord'?'Arpejo: toque as notas do acorde em sequência, uma por vez.':'Toque para ouvir. Uma casa corresponde a um semitom.'}`;
+  }
   function render(scene, options) {
     const focusedId = document.activeElement?.id;
-    const scroll = document.querySelector('.guitar-scroll')?.scrollLeft || 0;
+    const scroll = $('guitar-render').querySelector('.guitar-scroll')?.scrollLeft || 0;
+    const bassScroll=$('bass-render').querySelector('.guitar-scroll')?.scrollLeft||0;
     const pianoScroll = document.querySelector('.piano-scroll').scrollLeft;
-    $('instrument-pair').classList.toggle('both', options.instrument === 'both');
-    $('guitar-panel').hidden = options.instrument === 'piano';
-    $('piano-panel').hidden = options.instrument === 'guitar';
+    const instruments=options.instruments || (options.instrument==='both'?['guitar','piano']:[options.instrument]);
+    const mobile=window.innerWidth<=720, compare=mobile&&instruments.length>1;
+    const focused=instruments.includes(options.comparisonFocus)?options.comparisonFocus:instruments[0];
+    $('instrument-pair').classList.toggle('both',instruments.length===2);
+    $('instrument-pair').classList.toggle('triple',instruments.length===3);
+    for(const name of ['guitar','piano','bass'])$(name+'-panel').hidden=!instruments.includes(name)||(compare&&name!==focused);
+    $('comparison-tabs').hidden=!compare;
+    $('comparison-tabs').replaceChildren();
+    if(compare)for(const name of instruments){const b=document.createElement('button');b.id='compare-'+name;b.textContent={guitar:'Violão',piano:'Teclado',bass:'Baixo'}[name];b.setAttribute('aria-pressed',String(name===focused));b.addEventListener('click',()=>window.Studio.compare(name));$('comparison-tabs').append(b);}
     $('guitar-view-label').hidden = !!scene.voicings || options.instrument === 'piano' || scene.hideLabels;
     $('position-label').hidden = !!scene.voicings || options.instrument === 'piano' || (scene.kind === 'chord' && !scene.forceBoard && options.guitarView !== 'all');
     $('inversion').closest('label').hidden = !!scene.voicings;
     if (scene.kind === 'chord' && !scene.forceBoard && options.guitarView !== 'all') renderDiagram(scene, options);
     else renderFretboard(scene, options);
     const pianoPitches = renderPiano(scene, options);
+    if(instruments.includes('bass'))renderBass(scene,options);else $('bass-render').replaceChildren();
     renderMotion(scene, 'guitar'); renderMotion(scene, 'piano');
-    $('play-guitar').disabled = $('play-scene').disabled; $('play-piano').disabled = $('play-scene').disabled;
-    if (document.querySelector('.guitar-scroll')) document.querySelector('.guitar-scroll').scrollLeft = scroll;
+    $('play-guitar').disabled = $('play-scene').disabled; $('play-piano').disabled = $('play-scene').disabled; $('play-bass').disabled = $('play-scene').disabled;
+    if ($('guitar-render').querySelector('.guitar-scroll')) $('guitar-render').querySelector('.guitar-scroll').scrollLeft = scroll;
+    const bassViewport=$('bass-render').querySelector('.guitar-scroll');
+    if(bassViewport){bassViewport.scrollLeft=bassScroll;const selected=(scene.selected||[]).filter(n=>sourceOf(n)==='bass').at(-1);const key=selected?$('bass-'+selected.string+'-'+selected.fret):null;if(key&&bassViewport.clientWidth){const box=bassViewport.getBoundingClientRect(),r=key.getBoundingClientRect();if(r.left<box.left||r.right>box.right)bassViewport.scrollLeft+=r.left-box.left-(box.width-r.width)/2;}}
     document.querySelector('.piano-scroll').scrollLeft = pianoScroll;
     const pianoViewport = document.querySelector('.piano-scroll'), signature = pianoPitches.join(',');
     if (!pianoPitches.length) pianoViewport.dataset.voicing = '';
@@ -149,7 +181,7 @@
       }
       pianoViewport.dataset.voicing = signature;
     }
-    if (focusedId && /^(piano-key-|guitar-|chord-string-)/.test(focusedId)) $(focusedId)?.focus({ preventScroll: true });
+    if (focusedId && /^(piano-key-|guitar-|bass-|compare-|chord-string-)/.test(focusedId)) $(focusedId)?.focus({ preventScroll: true });
   }
   root.InstrumentUI = { render, label };
 })(window);

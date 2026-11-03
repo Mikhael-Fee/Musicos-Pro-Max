@@ -3,10 +3,10 @@ const T = require('../assets/theory.js'), G = require('../assets/guitar.js');
 const errors = new WeakMap();
 test.beforeEach(async ({ page }) => {
   const list = []; errors.set(page, list); page.on('pageerror', e => list.push(e.message));
-  await page.goto('/');
+  await page.goto('/'); await page.click('[data-page=explore]');
 });
 test.afterEach(async ({ page }) => { expect(errors.get(page)).toEqual([]); });
-async function mode(page, name) { await page.click(`[data-mode="${name}"]`); }
+async function mode(page, name) { if(name!=='explore')await page.click('[data-page=practice]'); await page.click(`[data-mode="${name}"]`); }
 async function openExercise(page, type) { await mode(page, 'practice'); await page.selectOption('#exercise-type', type); await page.click('#start-exercise'); }
 async function targetNote(page) {
   const text = await page.locator('#question').innerText();
@@ -161,7 +161,7 @@ test('a full session records exactly ten answers and one completion', async ({ p
 });
 
 for (const [width, height] of [[390, 844], [1366, 900]]) test(`chord buttons, sound control and diagram are together at ${width}px`, async ({ page }) => {
-  await page.setViewportSize({ width, height }); await page.goto('/');
+  await page.setViewportSize({ width, height }); await page.goto('/'); await page.click('[data-page=explore]');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.click('#chord-palette [data-degree="4"]');
   await expect(page.locator('#scene-title')).toHaveText('F');

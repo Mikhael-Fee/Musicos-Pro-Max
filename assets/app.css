@@ -95,7 +95,7 @@ main{max-width:1240px;padding:20px 22px 0;margin:auto}
 .string-name{font-size:10px;color:#aebed7;align-self:center;text-align:center}
 .fret-cell{background:linear-gradient(transparent calc(50% - .5px),#6e7a93 calc(50% - .5px),#6e7a93 calc(50% + .5px),transparent calc(50% + .5px)),#252c3b;border-right:2px solid #66718a;position:relative;height:34px;display:flex;align-items:center;justify-content:center}
 .fret-cell.nut{background-color:#151d2b;border-right:4px solid #c0c9da}
-.fret-cell button{width:25px;height:25px;padding:0;border-radius:50%;border:1px solid transparent;background:#414c6338;color:#9faec766;font-size:10px;position:relative;z-index:1;line-height:1;font-weight:600}
+.fret-cell button{width:25px;height:25px;padding:0;border-radius:50%;border:1px solid transparent;background:#414c6338;color:#bbc8dc;font-size:10px;position:relative;z-index:1;line-height:1;font-weight:600}
 .fret-cell button.active{background:var(--mint);color:#101b1a}
 .fret-cell button.root{background:var(--lilac);color:#101b1a}
 .fret-cell button.chosen{background:var(--orange);color:#201911;border:2px solid #fff}
@@ -388,3 +388,60 @@ body[data-exercise-type=ear] #guitar-view-label,body[data-exercise-type=ear] #po
 .fret-cell button.chosen{box-shadow:0 0 0 2px var(--orange)}
 .note-palette button[aria-pressed=true]{outline:2px solid var(--orange);outline-offset:2px}
 .chord-diagram .chosen .note-circle{stroke:#fff;stroke-width:4;filter:drop-shadow(0 0 2px var(--orange))}
+
+/* Phase 1 platform: clear entry points, readable course cards and local progress. */
+.skip-link{position:absolute;left:12px;top:-60px;padding:12px;background:var(--mint);color:#10231c;z-index:100}
+.skip-link:focus{top:12px}
+.primary-nav button[aria-current=page]{border-color:var(--mint);color:var(--mint);background:#87dfbe14}
+.home-hero,.dashboard-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:24px}
+.home-hero{margin-bottom:18px}
+.home-hero h1{font-size:32px;margin:5px 0 14px}
+.home-hero>.muted{font-size:15px;max-width:700px;margin-bottom:20px}
+.home-hero label{max-width:280px;font-size:13px}
+.home-hero button{margin:0 8px 8px 0;min-height:44px}
+.dashboard-grid,.course-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:14px;margin:20px 0}
+.dashboard-card h2{font-size:19px;margin-bottom:14px}
+.dashboard-card p,.dashboard-card li{font-size:13px;line-height:1.7;margin-bottom:12px}
+.dashboard-card ul{padding-left:18px}
+.dashboard-card button{display:block;margin:10px 0;min-height:44px;text-align:left;line-height:1.5;width:100%}
+.future-label{color:var(--muted);border-top:1px solid var(--line);padding-top:12px}
+#home-page>.muted{font-size:12px;margin:12px 0}
+#learn-page>h1{font-size:28px;margin:12px 0}
+#learn-unit-panel{position:static}
+.lesson-objective{font-size:13px;color:var(--mint);margin-bottom:10px}
+.lesson-copy{font-size:14px;line-height:1.8;margin:16px 0}
+.bass-tip{font-size:13px;line-height:1.7;background:#86c5f714;padding:12px;border-left:3px solid var(--altered);margin:14px 0}
+.lesson-demos{display:flex;flex-direction:column;gap:8px;margin:15px 0}
+.lesson-demos button,#learn-unit-panel>.primary{min-height:44px;text-align:left}
+#learn-unit-panel>.muted{font-size:12px;margin:12px 0}
+#learn-unit-panel h2{font-size:21px;margin:16px 0}
+#learn-unit-panel .answers{grid-template-columns:1fr;margin:14px 0}
+#learn-unit-panel .answers button{min-height:44px;font-size:13px}
+.lesson-feedback{padding:14px;margin:16px 0;border:1px solid;border-radius:8px;line-height:1.6}
+.lesson-feedback strong{font-size:18px;display:block;margin-bottom:6px}
+.lesson-feedback.result-success{border-color:var(--mint);background:#87dfbe14}
+.lesson-feedback.result-error{border-color:var(--rose);background:#ffabb514}
+#learn-unit-panel .pill{display:block;margin-top:14px}
+.practice-settings{display:flex;flex-wrap:wrap;gap:8px}
+.practice-settings label{flex:1;min-width:90px}
+#comparison-tabs{margin:8px 0}
+#comparison-tabs button{flex:1;min-height:40px}
+#comparison-tabs button[aria-pressed=true]{border-color:var(--mint);color:var(--mint)}
+.bass-board .fret-cell{height:40px}
+.bass-board .fret-cell button{width:30px;height:30px;font-size:11px}
+body[data-page=learn] .toolbar>label:has(#key),body[data-page=learn] .toolbar>label:has(#scale){display:none}
+#practice-tabs{margin-top:-4px}
+.notice{padding:12px;border:1px solid var(--orange);font-size:13px}
+@media(min-width:1001px){.instrument-pair.triple{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}.triple #bass-panel{grid-column:span 2}.triple .diagram-layout{flex-direction:column}.triple .chord-diagram{width:170px;flex-basis:auto}}
+@media(max-width:720px){.home-hero,.dashboard-card{padding:16px}.home-hero h1{font-size:26px}.home-hero>.muted{font-size:14px}.home-hero button{display:block;width:100%}.dashboard-grid,.course-grid{grid-template-columns:1fr}.primary-nav button{min-height:42px;font-size:13px}.lesson-copy{font-size:14px}.practice-settings{grid-column:span 2}.practice-settings select{font-size:11px}.practicing #practice-tabs,.guiding #practice-tabs,.cycling #practice-tabs{display:none}#practice-tabs button{font-size:11px;padding:8px}.instrument-pair .chord-diagram{width:170px;flex-basis:170px;max-height:190px}.lesson-demos{margin:12px 0}#learn-unit-panel .lesson-feedback p{font-size:13px}.bass-board .fret-cell{height:36px}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+#lesson-examples{margin-bottom:14px}
+#lesson-examples .lesson-demos{margin:0 0 8px}
+#lesson-examples>button{min-height:42px}
+#lesson-examples .lesson-demos button{text-align:left}
+.chord-diagram .touch-target{stroke:none;pointer-events:all}
+@media(min-width:721px){body[data-page=learn] .instrument-stage{position:sticky;top:16px}}
+@media(max-width:720px){body[data-exercise-type=ear] .instrument-stage{padding-top:6px}body.cycling .instrument-settings{margin-top:2px;margin-bottom:4px}body.cycling .stage-heading{margin-bottom:4px}.practicing #practice-panel .practice-controls{margin-top:3px;padding-top:3px}}
+@media(max-width:720px){body.cycling #cycle-policy-label{display:none}}
+body[data-page=learn] #play-scene,body[data-page=learn] .instrument-settings button:disabled{display:none}
+@media(min-width:1001px){body[data-page=learn] .workspace{grid-template-columns:360px minmax(0,1fr)}body[data-page=learn] .both .diagram-layout{flex-direction:column}}

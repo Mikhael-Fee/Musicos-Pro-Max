@@ -1,22 +1,43 @@
 # Músicos Pro Max
 
-Estúdio de prática musical em português para violão e teclado. Aplicação estática sem cadastro, banco, backend ou serviços externos de áudio. O HTML original do autor está preservado no primeiro commit; a versão 2 substitui a interface e a lógica de ensino herdadas.
+Plataforma estática de aprendizagem e prática musical em português para **violão, teclado e contrabaixo elétrico de quatro cordas**. Sem cadastro, banco, backend, serviços externos de áudio ou novas dependências de produção. A versão 3 implementa a Fase 1 pedagógica, preservando o laboratório e os treinos anteriores.
 
-## Interface e fluxo
+## Interface e aprendizagem
 
-- **Explorar:** campo harmônico, escala no instrumento ou acorde com extensões. Escolha, áudio e representação ficam na mesma área. O padrão é violão; há teclado e comparação dos dois lado a lado no computador.
-- **Exercícios:** encontre a nota, monte o acorde, intervalos de ouvido, graus e campo harmônico. As opções de resposta tocam e ficam marcadas antes de confirmar. O exercício de nota tem resposta imediata.
-- **Treino guiado:** o modelo fica visível desde o início e soa junto com o tempo 1 do metrônomo. Há opção para tocar o acorde nos quatro tempos. Por padrão a passagem ao próximo acorde é manual; avanço automático e repetições são opcionais.
+- **Início:** próxima aula, atalhos, progresso por instrumento/habilidade, conteúdos concluídos ou em revisão e histórico de atividades.
+- **Aprender:** três unidades completas: notas/acidentes/oitavas; intervalos; tríades e arpejos. Objetivo, explicações, dois exemplos interativos, quatro questões, feedback e revisão. Ouvir/ver os dois exemplos e acertar pelo menos 3/4 conclui uma unidade. A conclusão é distinta de consistência nos exercícios. Qualquer aula publicada pode ser aberta diretamente.
+- **Praticar:** exercícios livres, Treino guiado e Ciclos. Sessões livres de 5/10/15 questões; nível inicial/intermediário/avançado. O nível inicial usa tônica/terça/quinta nas notas e quatro intervalos; o intermediário usa os sete graus e seis intervalos; o avançado amplia os intervalos para todos os doze semitons. Tipos de acorde e tonalidade continuam selecionáveis.
+- **Explorar:** laboratório de escalas, graus, campo harmônico, acordes e extensões, com representações e áudio próximos aos controles.
 
-- **Ciclos:** quartas justas e quintas justas em uma aba própria, com os 12 tons, audição da volta completa e treino de próximo tom com condução automática de vozes.
+As sete trilhas têm uma estrutura declarada em `assets/lessons.js`. As trilhas sem unidades publicadas aparecem como conteúdo futuro, sem aulas fictícias. Há orientações de braço, afinação, arpejos e função harmônica específicas para baixistas nas três aulas iniciais.
 
-A configuração principal tem tom, escala e visualização. Inversão, posição aberta/fechada e volume do teclado ficam acima dele; posição e volume do violão ficam acima do violão. Volume geral, nomes das notas, modo de reprodução e sons de acerto/erro ficam em “Ajustes”. Os avisos têm volume próprio (85% por padrão) e botões para ouvir as duas vinhetas de quatro notas: ascendente no acerto, descendente no erro.
+**Aprender / Desafio nos exercícios:** Aprender mantém exemplos de alternativas antes da confirmação. Desafio registra a alternativa sem tocar nem mostrar sua resposta; a explicação só aparece após confirmar. No ouvido, apenas o alvo pode ser repetido, com a segunda posição oculta. Tocar livremente no instrumento não oferece prévias durante esse desafio. Os ciclos também têm os dois modos.
 
-Cada instrumento usa seu próprio voicing no som e na marcação, inclusive ao exibir os dois. “Ouvir teclado” e “Ouvir violão” permitem a audição isolada; volume zero silencia apenas aquele instrumento. Nos exercícios, “Ver” muda a visualização sem encerrar a sessão e “Som do modelo” escolhe a referência sonora independentemente. Em “Monte o acorde”, clicar no outro instrumento muda a montagem ativa, preservando as duas seleções; a confirmação avalia somente o instrumento indicado em “Montar no”.
+Os instrumentos podem ser alternados durante a atividade, preservando questão e acertos. Montagens e sequências têm seleções separadas. Comparações de dois ou três instrumentos usam painéis no computador e botões para exibir um painel por vez no celular. A referência sonora dos exercícios e os volumes continuam independentes da visualização.
 
-No teclado, a posição fechada agrupa os sons em até uma oitava; a aberta desloca vozes internas uma oitava acima, mantendo as notas e o baixo da inversão escolhida. Inversões seguem a fórmula do acorde (terça, quinta, sétima), inclusive quando 9, 11 e 13 estão reunidas na posição fechada. A terceira inversão só está disponível a partir de quatro notas. Omitir extensões para simplificar um acorde de teclado não faz parte desta opção.
+A configuração principal tem tom, escala e visualização. Inversões/posição aberta ou fechada ficam no teclado; regiões do braço e volumes ficam nos respectivos instrumentos. Ajustes contém volume geral e avisos de acerto/erro, com prévias e volume próprio (85% inicial).
 
-Notas com sustenidos ou bemóis têm preenchimento azul forte, respeitando a grafia da tonalidade, inclusive E♯ numa tecla branca. Sextas, sétimas e extensões 9/11/13 recebem preenchimento rosa nos botões, teclas ativas e pontos do violão. No teclado, uma etiqueta também mostra o grau. Se uma extensão tiver alteração, o rosa tem prioridade e um detalhe azul preserva a indicação da alteração. A seleção permanece indicada em laranja e branco. Os nomes e esse destaque ficam ocultos durante “Encontre a nota”. Depois da resposta, o resultado ganha painel colorido, símbolo e som opcional.
+Alterações recebem azul forte; sextas, sétimas e extensões 9/11/13 recebem rosa nos botões, teclas ativas e pontos. Nomes, graus, símbolos e feedback textual complementam as cores. Os rótulos não aparecem nos exercícios de localizar notas antes da tentativa.
+
+## Progresso local e migração
+
+`assets/progress.js` mantém `musicospromax.learning.v1`, com schema `version: 1`, totais por habilidade/instrumento, últimas 20 respostas por habilidade, até 60 sessões e conclusão/melhor resultado das aulas. A migração importa uma única vez os totais válidos de `musicospromax.stats.v1` como histórico legado sem atribuí-los a habilidades desconhecidas. Os dados antigos e `musicospromax.settings.v2` são preservados para compatibilidade.
+
+“Consistente” exige pelo menos oito resultados recentes, 85% de acerto, mais de uma sessão, quatro perguntas diferentes e evidência em dificuldade intermediária ou superior. “Revisar” usa o desempenho recente. Contagem isolada não significa domínio. Sessões guiadas registram atividade sem inventar acertos de execução física. Sessões interrompidas por recarga mantêm as respostas e são identificadas no histórico.
+
+Armazenamento indisponível permite uso em memória. Um registro com versão futura/incompatível é preservado, sem sobrescrita; a interface informa que novos resultados ficam em memória. Não há sincronização, microfone nem avaliação da execução física. O painel recomenda aulas ainda não concluídas e oferece acesso às habilidades com resultados fracos; adaptação automática da dificuldade e revisão de perguntas erradas pertencem à Fase 2.
+
+## Contrabaixo elétrico
+
+Afinação de quatro cordas, da mais grossa à mais fina: **E1 (MIDI 28), A1 (33), D2 (38), G2 (43)**, alturas sonoras reais. `assets/bass.js` define afinação, extensão de 0 a 20 casas, localização de notas, posições de escala e sequências próprias. Não adapta os voicings simultâneos do violão.
+
+A posição automática usa a tônica da escala como referência; há regiões 0–4, 5–9, 12–16 e mapa completo. Uma região fixa que não comporte a oitava é ajustada para a posição automática ao ouvir a escala. O braço indica cordas, casas, notas, tônicas, graus e seleção e mantém o foco e a rolagem ao tocar.
+
+Acordes no baixo são **arpejos**, com ataques separados, mesmo quando o estilo geral é “em bloco”. No exercício de formação, é necessário tocar as notas em ordem ascendente, começando na tônica; a mesma corda pode ser usada várias vezes. Oitavas alternativas são válidas se os intervalos da sequência forem preservados. Há treino de escala ascendente de uma oitava nos três instrumentos.
+
+O treino guiado oferece tônicas, tônica/quinta, tônica/terça/quinta, tríades e tétrades. São quatro ataques de baixo sincronizados ao mesmo relógio do metrônomo; tétrades usam o campo com sétimas e quintas diminutas respeitam a fórmula do acorde. Não há grooves, análise de latência ou pontuação rítmica automática nesta fase. Nos ciclos, o baixo toca tônica e arpejo; a condução das vozes simultâneas continua própria do teclado e do violão.
+
+O timbre do baixo usa síntese aditiva percussiva própria, com fundamental grave, ataque de dedilhado e decaimento natural, em canal de volume independente. As posições, graus e sons usam o mesmo MIDI. Os timbres são sintetizados, sem amostras acústicas externas.
 
 ## Convenções de violão
 
@@ -42,7 +63,7 @@ São 19 tipos: maior, menor, diminuto, 7, 7M, m7, m7(b5), dim7, sus2, sus4, 6, m
 
 Nos intervalos, a primeira nota fica fixa na tonalidade escolhida. “Ouvir desafio” esconde a posição da segunda nota até a resposta; clicar numa opção toca um exemplo com a mesma referência e marca as duas notas. “Confirmar” registra um único resultado e permite comparar com a resposta correta. O violão usa uma referência numa região em que a oitava inteira cabe na posição inicial, evitando uma comparação escondida por rolagem lateral.
 
-Os exercícios da aba Exercícios têm dez questões; os ciclos têm doze. Acertos e totais da versão anterior são preservados. Preferências e totais ficam em `localStorage`, sem sincronização entre aparelhos. Sem armazenamento disponível, a prática continua em memória. Não há reconhecimento por microfone nem avaliação automática da execução física do instrumento.
+As sessões livres têm 5, 10 ou 15 questões; os ciclos têm doze. Acertos e totais da versão anterior são preservados. Preferências e totais ficam em `localStorage`, sem sincronização entre aparelhos. Sem armazenamento disponível, a prática continua em memória. Não há reconhecimento por microfone nem avaliação automática da execução física do instrumento.
 
 ## Progressões gospel / worship
 
@@ -103,12 +124,20 @@ Os testes usam a porta 5174 e sempre iniciam seu próprio servidor sobre o build
 | Arquivo | Responsabilidade |
 | --- | --- |
 | `assets/theory.js` | Escalas, grafia, fórmulas e acordes diatônicos |
+| `assets/bass.js` | Afinação grave, regiões, escalas, arpejos e linhas do baixo |
+| `assets/progress.js` | Persistência, migração e indicadores por habilidade |
+| `assets/lessons.js` | Conteúdo das três unidades e estrutura de trilhas |
+| `assets/platform.js` | Início, catálogo, aulas e acompanhamento |
 | `assets/guitar.js` | Afinação, posições usuais, voicings compactos e posições de escala |
 | `assets/instruments.js` | Diagramas, braço, teclado e marcações de notas |
 | `assets/app.js` | Interface, treinos, progressões, áudio coordenado e preferências |
 | `assets/audio.js` | Timbres sintetizados, volume, compressor e metrônomo |
 | `scripts/build.cjs` | Build estático em `dist/` |
 
-O teclado usa síntese aditiva com ataque e harmônicos mais presentes; o violão usa síntese de corda dedilhada Karplus–Strong. São timbres sintetizados, não gravações acústicas. O áudio só é ativado após interação do usuário, conforme a política do navegador. Há canais independentes para teclado, violão, feedback e metrônomo, além do volume geral e compressor. Novos ataques preservam as notas que já estão soando; somente eventos futuros da audição anterior são cancelados. Interromper, encerrar e ocultar a página aplicam uma saída curta e cancelam agendamentos. O treino guiado agenda acordes em bloco e cliques no mesmo relógio Web Audio; não usa narração antes do compasso. O modo dedilhado continua disponível para explorar acordes.
+O teclado usa síntese aditiva com ataque e harmônicos mais presentes; o violão usa síntese de corda dedilhada Karplus–Strong. São timbres sintetizados, não gravações acústicas. O áudio só é ativado após interação do usuário, conforme a política do navegador. Há canais independentes para teclado, violão, baixo, feedback e metrônomo, além do volume geral e compressor. Novos ataques preservam as notas que já estão soando; somente eventos futuros da audição anterior são cancelados. Interromper, encerrar e ocultar a página aplicam uma saída curta e cancelam agendamentos. O treino guiado agenda acordes em bloco e cliques no mesmo relógio Web Audio; não usa narração antes do compasso. O modo dedilhado continua disponível para explorar acordes.
 
 O projeto Netlify existente publica `dist/` com `npm run build`. Envie para `main` somente após os testes; confirme o conteúdo no mesmo endereço. Consulte [DEPLOY.md](docs/DEPLOY.md) e [CHANGELOG.md](CHANGELOG.md). O GitHub Actions valida o projeto independentemente do Netlify; o deploy não espera o Actions por padrão.
+
+## Escopo e próximos passos
+
+Consulte [auditoria e entrega da Fase 1](docs/PHASE1.md). A Fase 2 prevê treinador rítmico, revisão de erros e adaptação de dificuldade; a Fase 3 avalia microfone, afinador, PWA offline e expansão. Nenhuma dessas fases foi antecipada.

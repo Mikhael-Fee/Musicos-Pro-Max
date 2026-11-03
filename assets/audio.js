@@ -25,10 +25,13 @@
       .filter(([harmonic]) => frequency * harmonic < sampleRate / 2)
       .map(([harmonic, amplitude]) => ({ frequency: frequency * harmonic, amplitude, attack: .003, decay: .22, sustain: amplitude * (harmonic === 1 ? .36 : .24), duration: harmonic === 1 ? 2.8 : 2.1 / Math.pow(harmonic, .2) }));
   }
+  function bassPartials(frequency, sampleRate) {
+    return [[1,.4],[2,.16],[3,.075],[4,.035],[6,.012]].filter(([h])=>frequency*h<sampleRate/2).map(([h,a])=>({frequency:frequency*h,amplitude:a,attack:.006,decay:.18,sustain:a*.18,duration:2.8/Math.sqrt(h)}));
+  }
   class SoundEngine {
     constructor(context = null) {
       this.context = context; this.volume = .55;
-      this.levels = { guitar: 1, piano: 1, feedback: .85, metronome: 1 };
+      this.levels = { guitar: 1, piano: 1, bass: 1, feedback: .85, metronome: 1 };
       this.voices = new Set(); this.voiceChannels = new Map(); this.cache = new Map(); this.noteSequence = 0;
     }
     init() {
@@ -83,15 +86,15 @@
         source.connect(gain).connect(this.channels.guitar);
         this.track(source, [gain], 'guitar', start, group); source.start(start);
       } else {
-        for (const partial of pianoPartials(frequency, ctx.sampleRate)) {
+        for (const partial of (instrument === 'bass' ? bassPartials : pianoPartials)(frequency, ctx.sampleRate)) {
           const osc = ctx.createOscillator(), gain = ctx.createGain();
           osc.type = 'sine'; osc.frequency.value = partial.frequency;
           gain.gain.setValueAtTime(0, start);
           gain.gain.linearRampToValueAtTime(partial.amplitude, start + partial.attack);
           gain.gain.exponentialRampToValueAtTime(partial.sustain, start + partial.decay);
           gain.gain.exponentialRampToValueAtTime(.0001, start + partial.duration);
-          osc.connect(gain).connect(this.channels.piano);
-          this.track(osc, [gain], 'piano', start, group); osc.start(start); osc.stop(start + partial.duration + .03);
+          osc.connect(gain).connect(this.channels[instrument]);
+          this.track(osc, [gain], instrument, start, group); osc.start(start); osc.stop(start + partial.duration + .03);
         }
       }
     }
@@ -149,5 +152,5 @@
     }
   }
   root.soundEngine = new SoundEngine();
-  if (typeof module !== 'undefined') module.exports = { SoundEngine, pluckSamples, pianoPartials };
+  if (typeof module !== 'undefined') module.exports = { SoundEngine, pluckSamples, pianoPartials, bassPartials };
 })(typeof window === 'undefined' ? globalThis : window);

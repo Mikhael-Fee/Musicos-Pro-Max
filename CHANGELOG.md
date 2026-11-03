@@ -1,5 +1,17 @@
 # Histórico
 
+## 3.0.0 — 03/11/2026
+
+- Fase 1: Início, Aprender, Praticar e Explorar; recursos anteriores mantidos nos novos acessos.
+- Três aulas completas de notas, intervalos e tríades/arpejos, com objetivos, exemplos, quatro questões, conclusão por desempenho e revisão.
+- Contrabaixo de quatro cordas integrado a todo o site: E1–A1–D2–G2, braço próprio, regiões e posições móveis, escalas, arpejos, timbre grave e volume independente.
+- Exercícios de escala e formação de arpejos no baixo; sequências preservadas por instrumento, sem regra de uma casa por corda para arpejos.
+- Linhas básicas de baixo no treino guiado, em quatro tempos, incluindo tétrades e quintas diminutas corretas.
+- Modos Aprender/Desafio, repetição de alvos sem expor a resposta auditiva, dificuldade e sessões de 5/10/15 questões.
+- Progresso versionado por habilidade/instrumento, histórico de sessões, resultados recentes e importação segura dos totais anteriores.
+- Comparação dos três instrumentos com seleção de painel no celular; foco e rolagem do braço mantidos após o toque, navegação por teclado, contraste e explicações complementares às cores.
+- Auditoria, limites, plano das próximas fases e testes de teoria, áudio, aulas, migração e regressões documentados.
+
 ## 2.2.0 — 16/10/2026
 
 - Ciclos corrigidos para condução de vozes: preservam notas em comum e escolhem as inversões mais próximas, em vez de repetir posições fundamentais.

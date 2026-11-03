@@ -1,9 +1,10 @@
 const { test, expect } = require('@playwright/test');
 const T = require('../assets/theory.js');
 const errors = new WeakMap();
+async function mode(page,name){if(name!=='explore')await page.click('[data-page=practice]');await page.click('[data-mode='+name+']');}
 test.beforeEach(async ({ page }) => {
   const list = []; errors.set(page, list); page.on('pageerror', e => list.push(e.message));
-  await page.goto('/');
+  await page.goto('/'); await page.click('[data-page=explore]');
 });
 test.afterEach(async ({ page }) => { expect(errors.get(page)).toEqual([]); });
 async function spyNotes(page) {
@@ -81,7 +82,7 @@ test('piano synthesis has correct pitch, audible upper harmonics and a decaying 
 });
 
 test('build exercise accepts either visible instrument and keeps its selections when views change', async ({ page }) => {
-  await page.selectOption('#instrument', 'both'); await page.click('[data-mode="practice"]');
+  await page.selectOption('#instrument', 'both'); await mode(page,'practice');
   await page.selectOption('#exercise-type', 'build'); await page.selectOption('#exercise-chord-type', 'major'); await page.selectOption('#reference-instrument', 'guitar');
   await page.click('#start-exercise'); const chord = await chordInQuestion(page); await spyNotes(page);
   await page.click('#guitar-0-0');
@@ -101,7 +102,7 @@ test('build exercise accepts either visible instrument and keeps its selections 
 });
 
 test('find note names the scale clearly, hides accidental hints, and gives distinct results with optional sound', async ({ page }) => {
-  await page.selectOption('#instrument', 'piano'); await page.selectOption('#key', '6'); await page.click('[data-mode="practice"]');
+  await page.selectOption('#instrument', 'piano'); await page.selectOption('#key', '6'); await mode(page,'practice');
   await page.click('#start-exercise');
   await expect(page.locator('#scene-category')).toHaveText('ESCALA DE REFERÊNCIA'); await expect(page.locator('#scene-title')).toHaveText('Escala de F# maior');
   await expect(page.locator('#piano-render .altered')).toHaveCount(0);
@@ -128,7 +129,7 @@ test('accidental spelling is highlighted, including E sharp on a white piano key
 });
 
 for (const everyBeat of [false, true]) test(`guided chords share the metronome clock, every beat=${everyBeat}`, async ({ page }) => {
-  await page.selectOption('#instrument', 'piano'); await page.click('[data-mode="guided"]'); await page.fill('#bpm', '120');
+  await page.selectOption('#instrument', 'piano'); await mode(page,'guided'); await page.fill('#bpm', '120');
   await page.locator('#guided-every-beat').setChecked(everyBeat); await spyNotes(page);
   await page.evaluate(() => {
     window.clicks = []; const original = soundEngine.tick.bind(soundEngine);
@@ -158,7 +159,7 @@ test('repeating a chord preserves sounding voices and lets them finish naturally
 });
 
 for (const direction of ['fourths', 'fifths']) test(`${direction} tab previews a transposed full circle and grades twelve exercises exactly once`, async ({ page }) => {
-  await page.selectOption('#key', '2'); await page.click('[data-mode="cycles"]'); await page.selectOption('#cycle-direction', direction);
+  await page.selectOption('#key', '2'); await mode(page,'cycles'); await page.selectOption('#cycle-direction', direction);
   const notes = T.cycle(2, direction);
   await expect(page.locator('[data-cycle-step]')).toHaveCount(12);
   await expect(page.locator('[data-cycle-step]')).toHaveText(notes.map(n => n.name));
@@ -179,7 +180,7 @@ for (const direction of ['fourths', 'fifths']) test(`${direction} tab previews a
 });
 
 test('full cycle playback completes its return and cancels when leaving the tab', async ({ page }) => {
-  await page.click('[data-mode="cycles"]'); await page.clock.install();
+  await mode(page,'cycles'); await page.clock.install();
   await page.click('#play-cycle'); await expect(page.locator('#cycle-playback-status')).toContainText('1/12');
   await page.clock.runFor(12 * 950); await expect(page.locator('#cycle-playback-status')).toHaveText('Retorno a C. Ciclo completo.');
   await page.clock.runFor(950); await expect(page.locator('#stop-cycle')).toBeHidden();
@@ -188,7 +189,7 @@ test('full cycle playback completes its return and cancels when leaving the tab'
 });
 
 test('mobile cycle exercise keeps the question, view switch and piano together', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 }); await page.click('[data-mode="cycles"]'); await page.click('#start-cycle-exercise');
+  await page.setViewportSize({ width: 390, height: 844 }); await mode(page,'cycles'); await page.click('#start-cycle-exercise');
   await page.selectOption('#cycle-view', 'piano'); await expect(page.locator('#piano-panel')).toBeVisible();
   await expect(page.locator('#cycle-question')).toContainText('Depois de C');
   await page.locator('#cycle-answers button').first().click();
@@ -200,7 +201,7 @@ test('mobile cycle exercise keeps the question, view switch and piano together',
 
 test('cycle C to F uses the nearest inversion in sound and both diagrams, then restores manual controls', async ({ page }) => {
   await page.selectOption('#instrument', 'both'); await page.selectOption('#guitar-view', 'all');
-  await page.click('[data-mode="cycles"]'); await page.selectOption('#cycle-reference', 'both'); await spyNotes(page);
+  await mode(page,'cycles'); await page.selectOption('#cycle-reference', 'both'); await spyNotes(page);
   await page.click('[data-cycle-step="1"]');
   const played = await page.evaluate(() => window.played);
   for (const instrument of ['piano', 'guitar']) expect(played.filter(n => n.instrument === instrument).map(n => n.midi)).toEqual([48, 53, 57]);
@@ -219,7 +220,7 @@ test('cycle C to F uses the nearest inversion in sound and both diagrams, then r
 });
 
 test('cycle answer previews always lead from the question chord and continue from the confirmed position', async ({ page }) => {
-  await page.selectOption('#instrument', 'piano'); await page.click('[data-mode="cycles"]'); await page.selectOption('#cycle-reference', 'piano');
+  await page.selectOption('#instrument', 'piano'); await mode(page,'cycles'); await page.selectOption('#cycle-reference', 'piano');
   await page.click('#start-cycle-exercise'); await page.locator('#cycle-answers button:not([data-pc="5"])').first().click();
   await page.click('#cycle-answers [data-pc="5"]');
   expect(await page.locator('#piano-render .active,#piano-render .root').evaluateAll(els => els.map(el => Number(el.dataset.midi)))).toEqual([48, 53, 57]);
@@ -234,7 +235,7 @@ test('cycle answer previews always lead from the question chord and continue fro
 });
 
 test('cycle fifths retains G in C to G/B and playback preserves minimal movement through the return', async ({ page }) => {
-  await page.selectOption('#instrument', 'piano'); await page.click('[data-mode="cycles"]'); await page.selectOption('#cycle-direction', 'fifths'); await page.selectOption('#cycle-reference', 'piano');
+  await page.selectOption('#instrument', 'piano'); await mode(page,'cycles'); await page.selectOption('#cycle-direction', 'fifths'); await page.selectOption('#cycle-reference', 'piano');
   await page.click('[data-cycle-step="1"]');
   expect(await page.locator('#piano-render .active,#piano-render .root').evaluateAll(els => els.map(el => Number(el.dataset.midi)))).toEqual([47, 50, 55]);
   await expect(page.locator('#piano-key-55')).toHaveClass(/voice-held/); await expect(page.locator('#piano-motion')).toContainText('G/B · 1ª inversão');
@@ -296,7 +297,7 @@ test('alterations and extensions have solid, distinct fills on note choices, pia
 
 test('mobile open cycle voicing scrolls the keyboard to keep all three voices visible', async ({ page }) => {
   await page.setViewportSize({width:390,height:844}); await page.selectOption('#instrument', 'piano');
-  await page.click('[data-mode="cycles"]'); await page.selectOption('#cycle-direction', 'fifths'); await page.selectOption('#piano-layout', 'open');
+  await mode(page,'cycles'); await page.selectOption('#cycle-direction', 'fifths'); await page.selectOption('#piano-layout', 'open');
   await page.click('[data-cycle-step="1"]'); await expect(page.locator('#piano-motion')).toContainText('G/B');
   const visible = await page.locator('.piano-scroll').evaluate(el => {
     const frame = el.getBoundingClientRect();
