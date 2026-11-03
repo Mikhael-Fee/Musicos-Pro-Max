@@ -1,5 +1,18 @@
 # Histórico
 
+## 3.1.0 — 03/11/2026
+
+- Estabilização validada no GitHub Actions antes da Fase 2: runner suportado, imagem oficial Playwright correspondente ao lockfile, Node 24 e verificação explícita do navegador. Testes e build permanecem obrigatórios.
+- Correções de conclusão de aula por instrumento, seleção de sequências, navegação e referência sonora dos ciclos; legibilidade, foco e alvos de toque revisados.
+- Ritmo em Aprender e Praticar: 24 padrões, 2/4, 3/4, 4/4, BPM, figuras/pausas/subdivisões, escuta, reprodução por ponteiro/teclado, aplicação nos três timbres e volume independente.
+- Agendamento de áudio por relógio Web Audio; avaliação estrutural com atraso constante removido, estimativa opcional de atraso e observações sem penalidade quando a precisão temporal é inconclusiva.
+- Revisões de erros com a questão original, alvo, alternativa confundida, explicação e repetição espaçada transparente.
+- Treino diário de aproximadamente 5/10/15 minutos, objetivos variados, registro atômico de respostas, pausa/retomada e resumo.
+- Dificuldade automática gradual e opcional baseada em resultados reais, variedade e múltiplas sessões; nível manual preservado.
+- Duas aulas completas de ritmo, aplicações nas três aulas iniciais e painel com desempenho recente, comparação entre sessões e próxima atividade recomendada.
+- Migração para schema 2 com backup exato da versão anterior, preservação de preferências e proteção contra sobrescrita de dados futuros ou inválidos.
+- Novos testes de ritmo, áudio renderizado, revisões, adaptação, migração, plano diário completo, retomada e celular, além das regressões existentes.
+
 ## 3.0.0 — 03/11/2026
 
 - Fase 1: Início, Aprender, Praticar e Explorar; recursos anteriores mantidos nos novos acessos.

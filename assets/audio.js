@@ -31,7 +31,7 @@
   class SoundEngine {
     constructor(context = null) {
       this.context = context; this.volume = .55;
-      this.levels = { guitar: 1, piano: 1, bass: 1, feedback: .85, metronome: 1 };
+      this.levels = { guitar: 1, piano: 1, bass: 1, rhythm: .8, feedback: .85, metronome: 1 };
       this.voices = new Set(); this.voiceChannels = new Map(); this.cache = new Map(); this.noteSequence = 0;
     }
     init() {
@@ -70,7 +70,7 @@
       this.voices.add(source); this.voiceChannels.set(source, { channel, gain: nodes[0], startedAt, group, released: false });
       source.onended = () => { this.voices.delete(source); this.voiceChannels.delete(source); source.disconnect(); nodes.forEach(n => n.disconnect()); };
     }
-    note(pitch, instrument = 'piano', delay = 0, at) {
+    note(pitch, instrument = 'piano', delay = 0, at, channel = instrument) {
       const ctx = this.init();
       this.trimVoices();
       const group = ++this.noteSequence;
@@ -83,8 +83,8 @@
         }
         const source = ctx.createBufferSource(); source.buffer = buffer;
         const gain = ctx.createGain(); gain.gain.value = .65;
-        source.connect(gain).connect(this.channels.guitar);
-        this.track(source, [gain], 'guitar', start, group); source.start(start);
+        source.connect(gain).connect(this.channels[channel]);
+        this.track(source, [gain], channel, start, group); source.start(start);
       } else {
         for (const partial of (instrument === 'bass' ? bassPartials : pianoPartials)(frequency, ctx.sampleRate)) {
           const osc = ctx.createOscillator(), gain = ctx.createGain();
@@ -93,17 +93,23 @@
           gain.gain.linearRampToValueAtTime(partial.amplitude, start + partial.attack);
           gain.gain.exponentialRampToValueAtTime(partial.sustain, start + partial.decay);
           gain.gain.exponentialRampToValueAtTime(.0001, start + partial.duration);
-          osc.connect(gain).connect(this.channels[instrument]);
-          this.track(osc, [gain], instrument, start, group); osc.start(start); osc.stop(start + partial.duration + .03);
+          osc.connect(gain).connect(this.channels[channel]);
+          this.track(osc, [gain], channel, start, group); osc.start(start); osc.stop(start + partial.duration + .03);
         }
       }
     }
-    tick(accent = false, delay = 0, when) {
+    tick(accent = false, delay = 0, when, channel = 'metronome') {
       const ctx = this.init(), source = ctx.createOscillator(), gain = ctx.createGain(), at = when ?? ctx.currentTime + delay;
       source.frequency.setValueAtTime(accent ? 1100 : 720, at);
       gain.gain.setValueAtTime(0, at); gain.gain.linearRampToValueAtTime(.22, at + .002);
       gain.gain.exponentialRampToValueAtTime(.0001, at + .06);
-      source.connect(gain).connect(this.channels.metronome); this.track(source, [gain], 'metronome', at, ++this.noteSequence); source.start(at); source.stop(at + .07);
+      source.connect(gain).connect(this.channels[channel]); this.track(source, [gain], channel, at, ++this.noteSequence); source.start(at); source.stop(at + .07);
+    }
+    rhythmHit(at,accent=false) {
+      const ctx=this.init(),source=ctx.createOscillator(),gain=ctx.createGain();
+      source.type='triangle';source.frequency.setValueAtTime(accent?230:170,at);source.frequency.exponentialRampToValueAtTime(90,at+.065);
+      gain.gain.setValueAtTime(0,at);gain.gain.linearRampToValueAtTime(.32,at+.003);gain.gain.exponentialRampToValueAtTime(.0001,at+.14);
+      source.connect(gain).connect(this.channels.rhythm);this.track(source,[gain],'rhythm',at,++this.noteSequence);source.start(at);source.stop(at+.16);
     }
     feedback(correct) {
       const ctx = this.init();

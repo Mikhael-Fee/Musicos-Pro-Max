@@ -1,3 +1,5 @@
+> Registro histórico da Fase 1 (3.0). Para os recursos atuais, consulte [PHASE2.md](PHASE2.md) e [README](../README.md).
+
 # Auditoria e entrega da Fase 1
 
 Data: 03/11/2026. Escopo: pedido de evolução pedagógica mais inclusão básica funcional do contrabaixo. Sem migração de framework ou backend.

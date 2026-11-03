@@ -1,12 +1,12 @@
 # Músicos Pro Max
 
-Plataforma estática de aprendizagem e prática musical em português para **violão, teclado e contrabaixo elétrico de quatro cordas**. Sem cadastro, banco, backend, serviços externos de áudio ou novas dependências de produção. A versão 3 implementa a Fase 1 pedagógica, preservando o laboratório e os treinos anteriores.
+Plataforma estática de aprendizagem e prática musical em português para **violão, teclado e contrabaixo elétrico de quatro cordas**. Sem cadastro, banco, backend, serviços externos de áudio ou novas dependências de produção. A versão 3.1 implementa a Fase 2: ritmo, revisão de erros, treino diário e dificuldade adaptativa, preservando o laboratório e os treinos anteriores. [Regras técnicas e limites da Fase 2](docs/PHASE2.md).
 
 ## Interface e aprendizagem
 
 - **Início:** próxima aula, atalhos, progresso por instrumento/habilidade, conteúdos concluídos ou em revisão e histórico de atividades.
-- **Aprender:** três unidades completas: notas/acidentes/oitavas; intervalos; tríades e arpejos. Objetivo, explicações, dois exemplos interativos, quatro questões, feedback e revisão. Ouvir/ver os dois exemplos e acertar pelo menos 3/4 conclui uma unidade. A conclusão é distinta de consistência nos exercícios. Qualquer aula publicada pode ser aberta diretamente.
-- **Praticar:** exercícios livres, Treino guiado e Ciclos. Sessões livres de 5/10/15 questões; nível inicial/intermediário/avançado. O nível inicial usa tônica/terça/quinta nas notas e quatro intervalos; o intermediário usa os sete graus e seis intervalos; o avançado amplia os intervalos para todos os doze semitons. Tipos de acorde e tonalidade continuam selecionáveis.
+- **Aprender:** cinco unidades completas: notas/acidentes/oitavas; intervalos; tríades e arpejos; pulso e compasso; subdivisões e contratempo. Objetivo, explicações, dois exemplos interativos, quatro questões, feedback e revisão. Ouvir/ver os dois exemplos e acertar pelo menos 3/4 conclui uma unidade. A conclusão é distinta de consistência nos exercícios. Qualquer aula publicada pode ser aberta diretamente.
+- **Praticar:** exercícios livres, Treino guiado, Ciclos, Ritmo, Revisar e Treino diário. Sessões livres de 5/10/15 questões; nível inicial/intermediário/ampliado ou automático opcional. O nível inicial usa tônica/terça/quinta nas notas e quatro intervalos; o intermediário usa os sete graus e seis intervalos; o avançado amplia os intervalos para todos os doze semitons. Tipos de acorde e tonalidade continuam selecionáveis.
 - **Explorar:** laboratório de escalas, graus, campo harmônico, acordes e extensões, com representações e áudio próximos aos controles.
 
 As sete trilhas têm uma estrutura declarada em `assets/lessons.js`. As trilhas sem unidades publicadas aparecem como conteúdo futuro, sem aulas fictícias. Há orientações de braço, afinação, arpejos e função harmônica específicas para baixistas nas três aulas iniciais.
@@ -21,11 +21,21 @@ Alterações recebem azul forte; sextas, sétimas e extensões 9/11/13 recebem r
 
 ## Progresso local e migração
 
-`assets/progress.js` mantém `musicospromax.learning.v1`, com schema `version: 1`, totais por habilidade/instrumento, últimas 20 respostas por habilidade, até 60 sessões e conclusão/melhor resultado das aulas. A migração importa uma única vez os totais válidos de `musicospromax.stats.v1` como histórico legado sem atribuí-los a habilidades desconhecidas. Os dados antigos e `musicospromax.settings.v2` são preservados para compatibilidade.
+`assets/progress.js` mantém a chave `musicospromax.learning.v1`, agora com schema `version: 2`. A migração faz backup exato da versão 1 antes de gravar a nova versão e preserva habilidades, aulas, sessões, histórico legado e preferências. Os novos dados incluem revisões com snapshots, planos diários retomáveis e recomendações por habilidade/instrumento. Dados futuros e JSON inválido são preservados, com estudo em memória. Sem armazenamento disponível, o app continua funcionando em memória.
 
-“Consistente” exige pelo menos oito resultados recentes, 85% de acerto, mais de uma sessão, quatro perguntas diferentes e evidência em dificuldade intermediária ou superior. “Revisar” usa o desempenho recente. Contagem isolada não significa domínio. Sessões guiadas registram atividade sem inventar acertos de execução física. Sessões interrompidas por recarga mantêm as respostas e são identificadas no histórico.
+“Consistente” exige oito resultados recentes, 85% de acerto, duas sessões, quatro perguntas e experiência intermediária. Concluir uma aula não comprova domínio permanente. O painel compara sessões e resultados recentes e recomenda uma revisão vencida, a continuação do treino ou uma aula.
 
-Armazenamento indisponível permite uso em memória. Um registro com versão futura/incompatível é preservado, sem sobrescrita; a interface informa que novos resultados ficam em memória. Não há sincronização, microfone nem avaliação da execução física. O painel recomenda aulas ainda não concluídas e oferece acesso às habilidades com resultados fracos; adaptação automática da dificuldade e revisão de perguntas erradas pertencem à Fase 2.
+**Revisar minhas dificuldades:** cada erro novo guarda a pergunta e sua explicação. Intervalos retêm a alternativa confundida; notas em cordas mantêm a corda de estudo. Erros voltam em dez minutos. Acertos em revisões vencidas e sessões diferentes espaçam a questão por 1/3/7/14/30 dias. Não há repetição automática infinita nem invenção de questões a partir de dados antigos incompletos.
+
+**Treino diário:** sessões opcionais de aproximadamente 5/10/15 minutos, com 6/12/18 atividades variadas. Misturam revisões, reforço, fundamentos, ritmo e um desafio. Uma resposta salva também avança o objetivo, sem duplicar contagem. É possível pausar, sair, recarregar, retomar o próximo objetivo ou encerrar com um resumo. A estimativa não impõe um cronômetro.
+
+**Dificuldade automática:** usa até 20 respostas recentes, variedade, múltiplas sessões e erros repetidos. Sobe/desce um nível por vez, exigindo mais evidências antes de mudar novamente. O nível manual continua disponível. Consulte os critérios exatos em [PHASE2.md](docs/PHASE2.md).
+
+## Ritmo
+
+Módulo independente em Aprender e Praticar. Metrônomo de 40–160 BPM, 2/4, 3/4 e 4/4, 24 padrões com semínimas, mínimas, colcheias, semicolcheias e pausas. Há reconhecimento auditivo, reprodução por toques/espaço/Enter, aplicação em uma nota de violão/teclado/baixo, volume próprio, feedback e histórico. Modelos e cliques usam agendamento absoluto no relógio Web Audio, com preparação e entrada no tempo 1.
+
+A avaliação separa estrutura e precisão: ignora deslocamento constante; avalia contagem e espaçamento relativo; uma execução temporal inconclusiva recebe observação sem nota. Ocultar a página cancela a atividade sem penalidade. A estimativa opcional de atraso combina reação humana e equipamento e não libera notas de precisão. Não há captação de microfone nem avaliação da execução física. Os resultados gerais de ritmo não são creditados ao instrumento usado como timbre.
 
 ## Contrabaixo elétrico
 
@@ -35,7 +45,7 @@ A posição automática usa a tônica da escala como referência; há regiões 0
 
 Acordes no baixo são **arpejos**, com ataques separados, mesmo quando o estilo geral é “em bloco”. No exercício de formação, é necessário tocar as notas em ordem ascendente, começando na tônica; a mesma corda pode ser usada várias vezes. Oitavas alternativas são válidas se os intervalos da sequência forem preservados. Há treino de escala ascendente de uma oitava nos três instrumentos.
 
-O treino guiado oferece tônicas, tônica/quinta, tônica/terça/quinta, tríades e tétrades. São quatro ataques de baixo sincronizados ao mesmo relógio do metrônomo; tétrades usam o campo com sétimas e quintas diminutas respeitam a fórmula do acorde. Não há grooves, análise de latência ou pontuação rítmica automática nesta fase. Nos ciclos, o baixo toca tônica e arpejo; a condução das vozes simultâneas continua própria do teclado e do violão.
+O treino guiado oferece tônicas, tônica/quinta, tônica/terça/quinta, tríades e tétrades. São quatro ataques de baixo sincronizados ao mesmo relógio do metrônomo; tétrades usam o campo com sétimas e quintas diminutas respeitam a fórmula do acorde. O guiado não avalia a precisão física; os novos exercícios de ritmo ficam em módulo próprio e distinguem estrutura de precisão temporal. Grooves avançados ficam para uma etapa futura. Nos ciclos, o baixo toca tônica e arpejo; a condução das vozes simultâneas continua própria do teclado e do violão.
 
 O timbre do baixo usa síntese aditiva percussiva própria, com fundamental grave, ataque de dedilhado e decaimento natural, em canal de volume independente. As posições, graus e sons usam o mesmo MIDI. Os timbres são sintetizados, sem amostras acústicas externas.
 
@@ -125,8 +135,12 @@ Os testes usam a porta 5174 e sempre iniciam seu próprio servidor sobre o build
 | --- | --- |
 | `assets/theory.js` | Escalas, grafia, fórmulas e acordes diatônicos |
 | `assets/bass.js` | Afinação grave, regiões, escalas, arpejos e linhas do baixo |
-| `assets/progress.js` | Persistência, migração e indicadores por habilidade |
-| `assets/lessons.js` | Conteúdo das três unidades e estrutura de trilhas |
+| `assets/progress.js` | Migração, indicadores, revisões e sessões diárias |
+| `assets/rhythm-core.js` | Compassos, padrões, tempos, análise estrutural e estimativa de atraso |
+| `assets/rhythm-player.js` | Agendamento por relógio Web Audio e cancelamento |
+| `assets/study-core.js` | Snapshots, planejamento e dificuldade adaptativa |
+| `assets/phase2.js` | Ritmo, Revisar, Treino diário e evolução recente |
+| `assets/lessons.js` | Cinco unidades completas e estrutura de trilhas |
 | `assets/platform.js` | Início, catálogo, aulas e acompanhamento |
 | `assets/guitar.js` | Afinação, posições usuais, voicings compactos e posições de escala |
 | `assets/instruments.js` | Diagramas, braço, teclado e marcações de notas |
@@ -134,10 +148,10 @@ Os testes usam a porta 5174 e sempre iniciam seu próprio servidor sobre o build
 | `assets/audio.js` | Timbres sintetizados, volume, compressor e metrônomo |
 | `scripts/build.cjs` | Build estático em `dist/` |
 
-O teclado usa síntese aditiva com ataque e harmônicos mais presentes; o violão usa síntese de corda dedilhada Karplus–Strong. São timbres sintetizados, não gravações acústicas. O áudio só é ativado após interação do usuário, conforme a política do navegador. Há canais independentes para teclado, violão, baixo, feedback e metrônomo, além do volume geral e compressor. Novos ataques preservam as notas que já estão soando; somente eventos futuros da audição anterior são cancelados. Interromper, encerrar e ocultar a página aplicam uma saída curta e cancelam agendamentos. O treino guiado agenda acordes em bloco e cliques no mesmo relógio Web Audio; não usa narração antes do compasso. O modo dedilhado continua disponível para explorar acordes.
+O teclado usa síntese aditiva com ataque e harmônicos mais presentes; o violão usa síntese de corda dedilhada Karplus–Strong. São timbres sintetizados, não gravações acústicas. O áudio só é ativado após interação do usuário, conforme a política do navegador. Há canais independentes para teclado, violão, baixo, ritmo, feedback e metrônomo, além do volume geral e compressor. Novos ataques preservam as notas que já estão soando; somente eventos futuros da audição anterior são cancelados. Interromper, encerrar e ocultar a página aplicam uma saída curta e cancelam agendamentos. O treino guiado agenda acordes em bloco e cliques no mesmo relógio Web Audio; não usa narração antes do compasso. O modo dedilhado continua disponível para explorar acordes.
 
-O projeto Netlify existente publica `dist/` com `npm run build`. Envie para `main` somente após os testes; confirme o conteúdo no mesmo endereço. Consulte [DEPLOY.md](docs/DEPLOY.md) e [CHANGELOG.md](CHANGELOG.md). O GitHub Actions valida o projeto independentemente do Netlify; o deploy não espera o Actions por padrão.
+O projeto Netlify existente publica `dist/` com `npm run build`. Envie para uma branch, confirme testes e Actions antes de integrar em `main`; confira o commit publicado no mesmo endereço. Se a validação remota não puder ser concluída, preserve a branch sem alegar publicação aprovada. Consulte [DEPLOY.md](docs/DEPLOY.md) e [CHANGELOG.md](CHANGELOG.md). O GitHub Actions valida o projeto independentemente do Netlify; o deploy não espera o Actions por padrão.
 
 ## Escopo e próximos passos
 
-Consulte [auditoria e entrega da Fase 1](docs/PHASE1.md). A Fase 2 prevê treinador rítmico, revisão de erros e adaptação de dificuldade; a Fase 3 avalia microfone, afinador, PWA offline e expansão. Nenhuma dessas fases foi antecipada.
+Consulte a [auditoria histórica da Fase 1](docs/PHASE1.md), a [estabilização](docs/STABILIZATION.md), a [Fase 2 implementada](docs/PHASE2.md) e o [estado da entrega 3.1](docs/RELEASE-3.1.md). A Fase 3 pode aprofundar grooves, validar latência em aparelhos reais, permitir exportação do progresso e avaliar PWA, afinador e microfone com critérios próprios de precisão.

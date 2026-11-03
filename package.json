@@ -1,8 +1,8 @@
 {
   "name": "musicos-pro-max",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "private": true,
-  "description": "Estúdio estático de prática musical para teclado e violão",
+  "description": "Aprendizagem musical para violão, teclado e baixo, com ritmo, revisão e estudo diário",
   "scripts": {
     "dev": "python3 -m http.server 5173 --bind 0.0.0.0",
     "test": "node --test tests/*.test.cjs && playwright test",

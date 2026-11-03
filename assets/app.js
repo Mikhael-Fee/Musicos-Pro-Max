@@ -34,7 +34,7 @@
   }
   function effectiveInstrument() { return auditionInstruments()[0]; }
   function sourceOf(n) { return n.instrument || (n.string === undefined ? 'piano' : 'guitar'); }
-  function saveSettings() { save(settingsKey, Object.fromEntries(settingIds.map(id => [id, $(id).type === 'checkbox' ? $(id).checked : $(id).value]))); }
+  function saveSettings() { const values=Object.fromEntries(settingIds.map(id=>[id,$(id).type==='checkbox'?$(id).checked:$(id).value]));if(session?.restore)for(const [id,value] of Object.entries(session.restore))if(settingIds.includes(id)&&!session.changed.has(id))values[id]=value;save(settingsKey,values); }
   function syncPracticeView() { for (const id of ['practice-view', 'cycle-view']) $(id).value = $('instrument').value; }
 
   function random(array) { return array[Math.floor(Math.random() * array.length)]; }
@@ -175,21 +175,27 @@
       degrees: 'Escolha a nota de cada grau. Cada opção toca e aparece no instrumento antes de confirmar.',
       field: 'Escolha o acorde do grau pedido. Você pode ouvir e visualizar cada opção antes de confirmar.'
     }[type];
+    if($('practice-difficulty').value==='auto'){const recommendation=progress.level(skillOf(type,visibleInstruments()[0]),visibleInstruments()[0]);$('exercise-help').textContent+=' Nível recomendado: '+recommendation.level+'. '+recommendation.reason;}
   }
-  function endPractice(message = '') {
+  function endPractice(message = '',reason='navigation') {
+    const finished=session;
     if (session?.type === 'ear') { $('guitar-view').value = session.previousView; $('scale-position').value = session.previousPosition; }
     $('answer-instrument-label').hidden = true; $('practice-panel').removeAttribute('data-result');
-    if(session)progress.end(session.progressId,session.completed===session.length);
+    if(session&&!session.external?.dailyId)progress.end(session.progressId,session.completed===session.length);
     document.body.classList.remove('practicing'); delete document.body.dataset.exerciseType; session = null; stopAudio(); $('practice-setup').hidden = false; $('practice-session').hidden = true;
     $('exercise-help').textContent = message || $('exercise-help').textContent;
-    lockMain(false); showExplore();
+    lockMain(false);
+    if(finished?.restore){for(const [id,value] of Object.entries(finished.restore))if(!finished.changed?.has(id))$(id).value=value;syncPracticeView();saveSettings();}
+    showExplore();
+    if(finished?.external)window.dispatchEvent(new CustomEvent('study:task-end',{detail:{...finished.external,reason,answered:finished.answered,correct:finished.result}}));
   }
   function lockMain(value) { ['key', 'scale'].forEach(id => $(id).disabled = value); }
-  function startPractice() {
+  function startPractice(config={}) {
+    if(config?.target)config={};
     stopGuided(); stopAudio();
     session = { type: $('exercise-type').value, reference: $('reference-instrument').value, instrument: visibleInstruments().includes($('reference-instrument').value)?$('reference-instrument').value:visibleInstruments()[0], selections: { guitar: [], piano: [], bass: [] }, completed: 0, correct: 0, last: -1, selection: [], previousView: $('guitar-view').value, previousPosition: $('scale-position').value };
-    Object.assign(session,{length:Number($('practice-length').value),policy:$('practice-policy').value,difficulty:Number($('practice-difficulty').value),decks:{}});
-    session.progressId=progress.begin(skillOf(session.type,session.instrument),session.instrument,session.policy,session.difficulty);
+    Object.assign(session,{length:config.length||Number($('practice-length').value),policy:$('practice-policy').value,difficulty:config.difficulty||($('practice-difficulty').value==='auto'?progress.level(skillOf(session.type,session.instrument),session.instrument,true).level:Number($('practice-difficulty').value)),decks:{},task:config.task,external:config.external,restore:config.restore,changed:new Set()});
+    session.progressId=config.external?.dailyId||progress.begin(skillOf(session.type,session.instrument),session.instrument,session.policy,session.difficulty);
     $('session-progress').max=session.length;
     document.body.classList.add('practicing'); document.body.dataset.exerciseType = session.type; $('practice-setup').hidden = true; $('practice-session').hidden = false; lockMain(true); syncPracticeView(); $('answer-instrument-label').hidden = !['build','scales'].includes(session.type); $('answer-instrument').value = session.instrument; nextQuestion();
   }
@@ -203,7 +209,7 @@
     if (!session) return;
     if (session.completed === session.length) {
       const score = session.correct, total=session.length;
-      endPractice(`Treino concluído: ${score} de ${total} acertos. ${score/total >= .8 ? 'Experimente outra tonalidade ou extensão.' : 'Revise as notas e tente mais uma vez.'}`); return;
+      endPractice(`Treino concluído: ${score} de ${total} acertos. ${score/total >= .8 ? 'Experimente outra tonalidade ou extensão.' : 'Revise as notas e tente mais uma vez.'}`,'finished'); return;
     }
     if(visibleInstruments().length===1)session.instrument=visibleInstruments()[0];$('answer-instrument').value=session.instrument;
     stopAudio(); session.answerSource=null; session.answered = false; session.choice = null; session.selection = []; session.selections = { guitar: [], piano: [], bass: [] }; session.selections[session.instrument] = session.selection;
@@ -216,10 +222,11 @@
     $('question-category').textContent = $('exercise-type').selectedOptions[0].textContent+(session.policy==='challenge'?' · Desafio':' · Aprender');
     const ns = scale(); let choices = [];
     if (session.type === 'notes' || session.type === 'degrees') {
-      const n = nextFrom(session.difficulty===1?ns.filter(x=>[1,3,5].includes(x.degree)):ns); session.last = n.degree; session.targetNote = n; session.expected = n.pc;
+      const forced=session.task;const n=forced?.pc!==undefined?(ns.find(n=>n.pc===forced.pc)||{pc:forced.pc,name:T.tonics.Maior[forced.pc]}):forced?.degree?ns[forced.degree-1]:nextFrom(session.difficulty===1?ns.filter(x=>[1,3,5].includes(x.degree)):ns); session.last = n.degree; session.targetNote = n; session.expected = n.pc;
       $('question').textContent = session.type === 'notes' ? `Encontre ${T.label(n.name, 'solfege')} (${n.name}).` : `Qual nota é o ${n.degree}º grau?`;
       $('question-help').textContent = session.type === 'notes' ? 'Pode ser em qualquer oitava. Toque na nota no instrumento.' : `Escala de ${ns[0].name} ${$('scale').value.toLowerCase()}. Escolha uma nota, ouça e confirme.`;
       neutralScene(`Escala de ${ns[0].name} ${$('scale').value.toLowerCase()}`, 'ESCALA DE REFERÊNCIA', session.type === 'notes');
+      if(session.task?.position&&session.type==='notes')$('question').textContent+=` No ${session.external?.instrument==='bass'?'baixo':'violão'}, procure na ${(session.external?.instrument==='bass'?4:6)-session.task.position.string}ª corda. Em outro instrumento, encontre a mesma nota.`;
       if (session.type === 'degrees') choices = ns.map(n => ({ value: n.pc, title: T.label(n.name), note: n }));
     } else if(session.type==='scales'){
       $('question').textContent=`Toque ${ns[0].name} ${$('scale').value.toLowerCase()} em ordem.`;
@@ -228,27 +235,28 @@
     } else if (session.type === 'build') {
       const n = nextFrom(ns); session.last = n.degree;
       const type = $('exercise-chord-type').value;
-      session.chord = type === 'field' ? T.chord(key(), $('scale').value, n.degree) : T.buildChord(n.pc, type, n.name);
+      session.chord = session.task?.chordRoot!==undefined?T.buildChord(session.task.chordRoot,session.task.chordType):type === 'field' ? T.chord(key(), $('scale').value, n.degree) : T.buildChord(n.pc, type, n.name);
       configurePiano(session.chord);
       $('question').textContent = session.instrument==='bass'?`Toque o arpejo de ${session.chord.name}.`:`Monte ${session.chord.name}.`;
       buildHelp();
       neutralScene(session.instrument==='bass'?`Arpejo de ${session.chord.name}`:`Monte ${session.chord.name}`, 'ENCONTRE AS NOTAS DO ACORDE');
     } else if (session.type === 'field') {
-      const d = nextFrom([1,2,3,4,5,6,7],'field'); session.last = d; session.expected = d;
+      const d = session.task?.degree||nextFrom([1,2,3,4,5,6,7],'field'); session.last = d; session.expected = d;
       session.field = field($('practice-field-format').value === 'seventh'); session.chord = session.field[d - 1];
       $('question').textContent = `Qual acorde é o ${d}º grau?`;
       $('question-help').textContent = `${ns[0].name} ${$('scale').value.toLowerCase()} · ${$('practice-field-format').value === 'seventh' ? 'com sétima' : 'tríades'}. Selecione, ouça e confirme.`;
       neutralScene('Escolha um acorde', 'CAMPO HARMÔNICO');
       choices = session.field.map((chord, i) => ({ value: i + 1, title: chord.name, chord }));
     } else {
-      const pool = session.difficulty===1?[2,4,7,12]:session.difficulty===3||$('ear-level').value==='all'?Array.from({length:12},(_,i)=>i+1):[2,3,4,5,7,12];
-      session.expected = nextFrom(pool,'ear'); session.last = session.expected;
+      let pool = session.difficulty===1?[2,4,7,12]:session.difficulty===3||$('ear-level').value==='all'?Array.from({length:12},(_,i)=>i+1):[2,3,4,5,7,12];
+      if(session.task?.distance)pool=[...new Set([...pool,session.task.distance,session.task.contrast].filter(Boolean))];
+      session.expected = session.task?.distance||nextFrom(pool,'ear'); session.last = session.expected;
       session.base = session.reference === 'bass' ? B.ascendingPath(scale(),B.region(key()))[0].midi : session.reference === 'guitar' ? G.ascendingPath(scale(), 0)[0].midi : 48 + key();
       $('question').textContent = 'Qual é a distância entre as duas notas?';
       $('question-help').textContent = `Referência fixa: ${T.label(ns[0].name, 'solfege')} (${ns[0].name}). Ouça o desafio; cada opção toca um exemplo a partir da mesma nota. Depois confirme.`;
       if(session.policy==='challenge')$('question-help').textContent=`Referência fixa: ${T.label(ns[0].name,'solfege')} (${ns[0].name}). Repita o alvo se precisar. As alternativas não tocam nem revelam posições antes da confirmação.`;
       neutralScene('Ouça e compare', 'DISTÂNCIA ENTRE NOTAS');
-      choices = shuffle([session.expected, ...shuffle(pool.filter(n => n !== session.expected)).slice(0, 3)]).map(n => ({ value: n, title: T.INTERVALS[n], subtitle: T.distance(n) }));
+      choices = shuffle([session.expected, ...[session.task?.contrast,...shuffle(pool.filter(n=>n!==session.expected&&n!==session.task?.contrast))].filter(Boolean).slice(0,3)]).map(n => ({ value: n, title: T.INTERVALS[n], subtitle: T.distance(n) }));
     }
     if(session.policy==='challenge'&&['degrees','field'].includes(session.type))$('question-help').textContent='Selecione e confirme. O exemplo e a explicação aparecem depois da tentativa.';
     session.choices = choices;
@@ -314,9 +322,19 @@
   }
   function grade(correct, explanation) {
     if (!session || session.answered) return;
-    session.answered = true; session.completed++; if (correct) { session.correct++; stats.correct++; }
-    stats.attempts++; if (session.completed === session.length) stats.sessions++;
-    progress.record({skill:skillOf(session.type,session.answerSource||session.instrument),instrument:session.answerSource||(['ear','field','degrees'].includes(session.type)?session.reference:session.instrument),correct,difficulty:session.difficulty,session:session.progressId,question:session.type+':'+key()+':'+(session.expected??session.chord?.name??'scale')});
+    const instrument=session.answerSource||(['ear','field','degrees'].includes(session.type)?session.reference:session.instrument);
+    const descriptor={type:session.type,key:key(),scale:$('scale').value};
+    if(session.type==='notes'){descriptor.pc=session.expected;const position=noteLocation(session.expected,instrument);if(position.string!==undefined){const string=session.answerNote?.string??position.string,tuning=instrument==='bass'?B.TUNING:G.TUNING;descriptor.position=session.task?.position&&instrument===session.external?.instrument?session.task.position:{string,fret:T.mod(session.expected-tuning[string])};}}
+    if(session.type==='field')descriptor.fieldFormat=$('practice-field-format').value;
+    if(['degrees','field'].includes(session.type))descriptor.degree=session.type==='degrees'?session.targetNote.degree:session.expected;
+    if(session.type==='ear'){descriptor.distance=session.expected;if(!correct&&session.choice)descriptor.contrast=session.choice;else if(session.task?.contrast)descriptor.contrast=session.task.contrast;}
+    if(session.type==='build'){descriptor.chordRoot=session.chord.root;descriptor.chordType=session.chord.type;}
+    const context=session.external||{},extra={source:context.source,reviewId:context.reviewId,dailyId:context.dailyId,dailyStep:context.dailyStep},attemptId=extra.dailyId?extra.dailyId+':daily:'+extra.dailyStep:session.progressId+':'+(session.completed+1);
+    const accepted=progress.record({skill:skillOf(session.type,instrument),instrument,correct,difficulty:session.difficulty,session:session.progressId,question:StudyTheory.key(descriptor),task:descriptor,prompt:$('question').textContent,explanation,chosen:session.choice??session.selection.map(n=>describeNote(n)).join(' → '),...extra,attemptId});
+    if(!accepted){$('feedback').textContent='Esta atividade está em pausa ou já foi registrada. Retome pelo treino diário.';return;}
+    session.answered=true;session.result=correct;session.completed++;if(correct){session.correct++;stats.correct++;}
+    stats.attempts++;if(session.completed===session.length&&!session.external)stats.sessions++;
+    window.dispatchEvent(new CustomEvent('study:attempt',{detail:{...extra,correct,instrument}}));
     save(statsKey, stats); updateStats();
     $('session-progress').value = session.completed;
     $('session-label').textContent = `${session.completed}/${session.length} respondidas · ${session.correct} acertos`;
@@ -394,8 +412,8 @@
       cancelAudition();midiNote(n,0,sourceOf(n));session.selection.push({...n,instrument:sourceOf(n)});session.selections[session.instrument]=session.selection;scene.selected=Object.values(session.selections).flat();draw();$('confirm-answer').disabled=false;$('live-note').textContent='Sequência: '+session.selection.map(describeNote).join(' → ');return;
     }
     if (session && !session.answered && session.type === 'notes') {
-      session.answerSource=sourceOf(n); showSingle(n); const correct = T.mod(n.midi) === session.expected;
-      grade(correct, `${session.targetNote.name} é o ${session.targetNote.degree}º grau desta escala.`);
+      session.answerSource=sourceOf(n);session.answerNote=n; showSingle(n); const correct = T.mod(n.midi) === session.expected&&(!session.task?.position||sourceOf(n)!==session.external?.instrument||n.string===session.task.position.string);
+      grade(correct, `${session.targetNote.name}${session.targetNote.degree?' é o '+session.targetNote.degree+'º grau desta escala.':' é a nota pedida.'}${session.task?.position?' Nesta revisão, localize-a na corda indicada.':''}`);
       scene.hideLabels = false; scene.kind = 'scale'; scene.scale = [{ ...session.targetNote, degree: 1 }]; scene.selected = [n]; draw(); return;
     }
     if (session && !session.answered && session.type === 'build') {
@@ -625,6 +643,7 @@
   syncPracticeView();
   document.querySelectorAll('[data-mode]').forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
   document.querySelectorAll('select').forEach(el => el.addEventListener('change', () => {
+    if(session?.restore){session.changed.add(el.id==='practice-view'?'instrument':el.id);}
     if (['practice-view', 'cycle-view'].includes(el.id)) $('instrument').value = el.value;
     if (['instrument', 'practice-view', 'cycle-view'].includes(el.id)) {
       stopAudio(); syncPracticeView();
@@ -633,7 +652,7 @@
     if (el.id === 'answer-instrument') { stopAudio(); switchAnswerInstrument(el.value, true); return; }
     if (el.id === 'reference-instrument') { saveSettings(); changeReference(); return; }
     if (settingIds.includes(el.id) || ['practice-view', 'cycle-view'].includes(el.id)) saveSettings();
-    if (el.id === 'exercise-type') { exerciseHelp(); return; }
+    if (['exercise-type','practice-difficulty'].includes(el.id)) { exerciseHelp(); return; }
     if (['exercise-chord-type', 'practice-field-format', 'ear-level','practice-policy','practice-length','practice-difficulty','cycle-policy'].includes(el.id)) return;
     if(el.id==='bass-region')delete scene.bassRegion;
     if(el.id==='guided-format'&&el.value==='triad'&&$('bass-pattern').value==='seventh'){$('bass-pattern').value='triad';saveSettings();}
@@ -705,7 +724,19 @@
   document.addEventListener('click', event => { if (!$('settings').contains(event.target)) $('settings').open = false; });
   document.addEventListener('visibilitychange', () => { if (document.hidden) { if (guided) stopGuided(); stopCyclePlayback(); stopAudio(); } });
   $('guide-link').addEventListener('click', () => { if (mode !== 'explore') setMode('explore'); $('explore-panel').querySelector('details').open = true; });
-  window.Studio={hidden:pcs=>{cancelAudition();for(const instrument of visibleInstruments())pcs.forEach((pc,i)=>midiNote(noteLocation(pc,instrument),i*.65,instrument));},setMode,startPractice,compare:name=>{comparisonFocus=name;draw();},stop:()=>{endPractice();stopGuided();endCycleExercise();stopAudio();},lesson:(lessonScene)=>{mode='lesson';clearPalettes();scene=lessonScene;scene.scale ||= scale();$('scene-title').textContent=scene.title||'Demonstração';$('scene-category').textContent='APRENDER · OUVIR E TOCAR';$('scene-description').textContent=scene.description||'';$('play-scene').disabled=true;draw();},lessonPlay:(pcs,chordType)=>{if(chordType){const chord=T.buildChord(pcs[0],chordType);showChord(chord,'DEMONSTRAÇÃO');playChord(chord);}else{playArrangement(visibleInstruments().map(instrument=>({instrument,notes:pcs.map(pc=>noteLocation(pc,instrument))})),.5,false);}},select:n=>showSingle(n),render:draw,getInstrument:()=>visibleInstruments().includes(comparisonFocus)?comparisonFocus:visibleInstruments()[0]};
+  function startTask(raw,external={}){
+    const task=StudyTheory.task(raw);if(!task||['lesson','rhythm'].includes(task.type))return;
+    setMode('practice');
+    const ids=['key','scale','instrument','reference-instrument','exercise-type','exercise-chord-type','practice-field-format','practice-length','practice-policy','practice-difficulty','guitar-view','bass-region','scale-position'];
+    const restore=Object.fromEntries(ids.map(id=>[id,$(id).value]));
+    const instrument=external.instrument||visibleInstruments()[0];
+    $('key').value=String(task.key);$('scale').value=task.scale;$('instrument').value=instrument;$('reference-instrument').value=instrument;
+    $('exercise-type').value=task.type;if(task.chordType)$('exercise-chord-type').value=task.chordType;if(task.fieldFormat)$('practice-field-format').value=task.fieldFormat;
+    $('practice-policy').value='learn';
+    if(task.position){if(instrument==='bass')$('bass-region').value='all';else if(instrument==='guitar')$('guitar-view').value='all';}
+    startPractice({task,external,restore,difficulty:external.difficulty||task.difficulty||1,length:1});
+  }
+  window.Studio={startTask,hidden:pcs=>{cancelAudition();for(const instrument of visibleInstruments())pcs.forEach((pc,i)=>midiNote(noteLocation(pc,instrument),i*.65,instrument));},setMode,startPractice,compare:name=>{comparisonFocus=name;draw();},stop:()=>{endPractice();stopGuided();endCycleExercise();stopAudio();},lesson:(lessonScene)=>{mode='lesson';clearPalettes();scene=lessonScene;scene.scale ||= scale();$('scene-title').textContent=scene.title||'Demonstração';$('scene-category').textContent='APRENDER · OUVIR E TOCAR';$('scene-description').textContent=scene.description||'';$('play-scene').disabled=true;draw();},lessonPlay:(pcs,chordType)=>{if(chordType){const chord=T.buildChord(pcs[0],chordType);showChord(chord,'DEMONSTRAÇÃO');playChord(chord);}else{playArrangement(visibleInstruments().map(instrument=>({instrument,notes:pcs.map(pc=>noteLocation(pc,instrument))})),.5,false);}},select:n=>showSingle(n),render:draw,getInstrument:()=>visibleInstruments().includes(comparisonFocus)?comparisonFocus:visibleInstruments()[0]};
   window.addEventListener('resize',()=>{if(scene)draw();});
   exerciseHelp(); updateStats(); showExplore();
 })();
