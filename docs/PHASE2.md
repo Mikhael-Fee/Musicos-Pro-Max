@@ -73,7 +73,7 @@ A versão 2 guarda até 120 sessões, 200 revisões, 20 planos diários, 500 IDs
 
 Os testes preservam as verificações da V3 e acrescentam teoria/tempo rítmico, áudio real renderizado offline nos três timbres, entrada por ponteiro/teclado, cancelamento, revisões reais, migração e backup, adaptação gradual, plano diário e retomada, duas unidades rítmicas completas e layout móvel. A verificação estrutural da entrada usa relógio determinístico no teste de teclado; a temporização e a energia reais do áudio são verificadas separadamente com `OfflineAudioContext`.
 
-Resultado final e estado remoto serão registrados em [RELEASE-3.1.md](RELEASE-3.1.md). Uma execução local não substitui o GitHub Actions. A publicação no mesmo site depende do vínculo Netlify com `main`; não se atribui status Published sem evidência. Nesta sessão, a política de rede não permite o domínio Netlify e não há integração autenticada disponível.
+Resultado final e estado remoto serão registrados em [RELEASE-3.1.md](RELEASE-3.1.md). Uma execução local não substitui o GitHub Actions. A publicação no mesmo site depende do vínculo Netlify com `main`; não se atribui status Published sem evidência. A validação final acessou o domínio público e comparou os 15 assets com o commit corrigido; o painel, o SHA interno do deploy e os logs Netlify permanecem sem consulta autenticada. Consulte o relatório atualizado da versão.
 
 ## Próximos passos — Fase 3
 

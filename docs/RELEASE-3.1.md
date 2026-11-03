@@ -1,35 +1,49 @@
 # Entrega 3.1 — Fase 2
 
-## Correções e interface
+## Funcionalidades entregues
 
-- CI com ambiente suportado e Chromium fornecido pela imagem oficial correspondente ao Playwright; nenhuma validação removida ou ignorada.
-- Conclusão de aulas, respostas e sessões atribuídas ao instrumento utilizado, sequências realmente limpas, navegação repetida sem abandono e ciclos com referência correta.
-- Rótulos/controles mais legíveis, alvos de toque, foco de teclado, contraste e organização móvel revisados. Novas atividades usam ajustes recolhíveis e superfície de prática própria, preservando a identidade visual.
+- Ritmo: metrônomo contínuo, compassos 2/4, 3/4 e 4/4, três níveis, 24 padrões, figuras/pausas, percepção e reprodução por toque/teclado, volume independente e aplicação nos timbres de violão, teclado e baixo.
+- Revisões com a questão original, retorno inicial em dez minutos e espaçamento de 1, 3, 7, 14 e 30 dias conforme acertos em sessões distintas.
+- Treino diário de 5/10/15 minutos estimados, resultados salvos por resposta, pausa, retomada após recarga e resumo.
+- Dificuldade automática gradual, alternativa manual, cinco aulas completas e acompanhamento por habilidade/instrumento.
+- Migração versionada com backup e preservação dos dados anteriores. Progresso continua local ao navegador.
+- Estabilização de crédito por instrumento, sequências, navegação e CI. A correção do BPM preserva os controles e o foco, atualiza apenas a atividade e ignora eventos repetidos com o mesmo valor.
 
-## Implementado
+Detalhes pedagógicos e de armazenamento: [PHASE2.md](PHASE2.md). Histórico de estabilização: [STABILIZATION.md](STABILIZATION.md).
 
-Ritmo completo com metrônomo, três compassos, três níveis, 24 padrões, figuras/pausas, escuta e reprodução por toque/teclado; relógio Web Audio, volume e aplicação nos três timbres. Revisões com questão original e repetição espaçada. Treinos diários opcionais de 5/10/15 minutos, pausa/retomada e resumo. Dificuldade automática gradual com alternativa manual. Cinco aulas completas, painel recente por habilidade/instrumento e migração versionada com backup.
+## Revisão e publicação verificadas em 3 de novembro de 2026
 
-As regras, critérios de avaliação, armazenamento e limites estão em [PHASE2.md](PHASE2.md). A auditoria histórica está em [STABILIZATION.md](STABILIZATION.md).
+A `main` foi confirmada em **`b75a5fa0d8e83fa17adbcfa997092c06dd44eed7`**. O [GitHub Actions da main](https://github.com/Mikhael-Fee/Musicos-Pro-Max/actions/runs/41705391009) terminou com sucesso nessa revisão. Não foi criado outro PR nem repetido o merge nesta validação.
 
-## Verificação
+O endereço público [musicospromax.netlify.app](https://musicospromax.netlify.app/) respondeu HTTP 200. Todos os **15 arquivos de `assets/`**, incluindo CSS, instrumentos, áudio, persistência e os módulos `phase2`, `rhythm-core`, `rhythm-player` e `study-core`, foram baixados e comparados por SHA-256: são idênticos aos arquivos de `b75a5fa`. A interface pública identifica a versão 3.1 e os testes abaixo executaram contra esse domínio, sem substituição dos módulos por arquivos locais.
 
-`npm test` executa os unitários e os testes de navegador contra um build novo. A suíte mantém as regressões anteriores e acrescenta migração, revisão espaçada, dificuldade, cancelamento/temporização, áudio real renderizado offline, entrada por ponteiro/teclado, duas aulas rítmicas, plano diário completo no baixo, retomada e geometria móvel. `npm run build` gera o site estático em `dist/`; `git diff --check` verifica o patch.
+Isso comprova que o conteúdo funcional da revisão corrigida está sendo servido. **Não comprova o SHA registrado internamente pela Netlify nem o estado administrativo Published.** Esta sessão não dispõe de integração ou credencial Netlify; o GitHub não retornou status/deployment Netlify para o commit. Permanecem sem consulta: status do deploy no painel, SHA associado e logs de build. O sucesso do Actions e os arquivos públicos corretos não substituem esses registros. A ausência de erros nos logs do build Netlify não foi confirmada.
 
-A validação de estabilização passou em 86 testes locais e no [Actions 41678598683](https://github.com/Mikhael-Fee/Musicos-Pro-Max/actions/runs/41678598683). A versão completa passou localmente em **111 testes: 30 unitários e 81 de navegador**, sem falhas ou testes ignorados. O build de produção e `git diff --check` também passaram. A suíte inclui uma sessão diária inteira no baixo, alternância/retomada, preferências após recarga e continuidade do metrônomo entre compassos. As execuções remotas da revisão exata podem ser conferidas nos links abaixo; aprovação local não substitui o Actions.
+## Testes executados
 
-## GitHub e Netlify
+- Validação local da revisão corrigida: **30 unitários e 82 testes de navegador aprovados**; build estático e `git diff --check` aprovados.
+- Nova execução da suíte completa contra produção: **82 testes de navegador aprovados**, sem falhas, ignorados ou resultados instáveis.
+- Validação móvel adicional em produção: **38 testes aprovados**, sem falhas, ignorados ou resultados instáveis, em `phase2.spec.cjs`, `platform.spec.cjs` e `stabilization.spec.cjs`, com Chromium emulado a 390 × 844, toque e navegação móvel. O teste de comparação ajustado também passou isoladamente no desktop.
+- Dois percursos contínuos de estudante novo em contextos vazios, a **1366 × 900 e 390 × 844**, aprovados: escolher baixo; navegar pelas quatro áreas; concluir a aula de notas com quatro acertos; errar percepção rítmica; refazer a questão vencida e avançar para revisão em um dia; iniciar, pausar e retomar o treino diário após recarga; concluir suas seis atividades; recarregar e confirmar aula, revisão e sessão preservadas. Nenhum erro JavaScript nesses percursos.
 
-Branch de trabalho: [`phase2/stabilize-and-rhythm`](https://github.com/Mikhael-Fee/Musicos-Pro-Max/tree/phase2/stabilize-and-rhythm). [Comparação com main / abertura de PR](https://github.com/Mikhael-Fee/Musicos-Pro-Max/compare/main...phase2/stabilize-and-rhythm). [Execuções da branch](https://github.com/Mikhael-Fee/Musicos-Pro-Max/actions?query=branch%3Aphase2%2Fstabilize-and-rhythm).
+A suíte em produção cobre os três instrumentos, seleção/visualização das notas, áudio renderizado com `OfflineAudioContext`, percepção/reprodução rítmica, metrônomo, alteração de BPM mantendo foco e identidade do controle, revisões, pausa/retomada, dificuldade automática/manual, migração, persistência, navegação e geometria móvel. Os testes usam armazenamento isolado; não acessam dados de alunos reais.
 
-A base de produção desta entrega é `9146cd6b7ef9a0450073d1aa01f5d70a64c3bd4a`. O fluxo envia primeiro a branch e só permite avançar `main` para a mesma revisão depois de confirmar o GitHub Actions aprovado. Se essa aprovação não puder ser obtida, a entrega permanece na branch. Um avanço de `main` permite a publicação automática já autorizada no projeto Netlify existente; não comprova por si só o status Published. Não foi criado um PR pela API: a sessão não possui acesso autenticado à API; o link acima permite abrir a comparação pronta.
+No percurso contínuo, somente o relógio de data do contexto de teste foi avançado onze minutos para vencer a revisão; o relógio Web Audio permaneceu real. As respostas foram dadas pelos controles da aplicação, usando o modelo e o estado da tarefa como oráculos de automação. Alguns testes existentes também usam dados preparados e relógio determinístico para verificar regras e espaçamentos. Isso não representa uma avaliação humana de aprendizagem ou precisão física.
 
-O domínio `musicospromax.netlify.app` não está na lista de destinos permitidos da política de rede do ambiente; a consulta pública recebeu HTTP 403 do proxy. Não há integração Netlify autenticada nesta sessão. Portanto **não há confirmação de deploy ou de status Published**, nem foi alegada publicação em produção. O mesmo projeto/domínio continua sendo o destino, com configuração existente em `netlify.toml`.
+Não foi identificado defeito da aplicação que exigisse nova correção nesta rodada. A primeira execução móvel teve 37 aprovações e um timeout: o teste de comparação tentava clicar no teclado oculto sem trocar a aba móvel. O roteiro foi corrigido para selecionar a aba Teclado quando a comparação está recolhida; a aplicação não foi alterada. As alterações finais limitam-se à documentação e a esse teste; dados dos usuários, dependências e funcionalidades foram preservados.
 
-Antes de integrar em `main`, confirmar o Actions da revisão exata. Para confirmar a publicação, verificar no projeto Netlify a implantação correspondente ao commit e o estado Published. O vínculo GitHub/Netlify já configurado deve ser mantido. O Netlify não aguarda os testes do Actions por padrão.
+## Limitações e pendências reais
 
-## Limites e Fase 3
+1. Conferir no projeto Netlify existente o deploy associado a `b75a5fa`, o status Published e os logs de build. O conteúdo público da revisão já foi verificado.
+2. Mobile foi validado em Chromium emulado, com inspeção das capturas e testes de layout; Safari/iOS, Android físico, leitores de tela e fones Bluetooth não foram certificados.
+3. Áudio foi verificado por eventos, temporização e energia do sinal renderizado; não houve audição humana nos alto-falantes do usuário. A estimativa de atraso mistura dispositivo e reação humana e não certifica execução instrumental.
+4. Progresso permanece neste navegador, sem sincronização entre aparelhos. Armazenamento bloqueado permite estudo em memória; versões incompatíveis são preservadas.
 
-A causa interna exata da falha histórica do Chromium ainda depende de logs autenticados indisponíveis; isso não impede verificar o sucesso da nova configuração. A estimativa de atraso mistura resposta humana e equipamento; não há pontuação certificada de precisão ou execução física. O progresso continua local ao navegador. A validação móvel usa Chromium emulado, sem certificação de Bluetooth ou leitores de tela.
+## Proposta priorizada para a próxima evolução — sem implementação
 
-Prioridades seguintes: ensaiar latência em aparelhos reais, aprofundar grooves de baixo e aulas de harmonia/escalas, permitir exportação/importação explícita dos dados e avaliar PWA. Afinador/microfone precisam de consentimento e validação própria antes de avaliar o estudante.
+1. Validar acessibilidade, áudio e resposta ao toque em Android/iOS reais, incluindo VoiceOver/TalkBack e Bluetooth; documentar a matriz de aparelhos antes de ampliar avaliações temporais.
+2. Projetar exportação/importação explícita de progresso, com validação, backup e recuperação, para reduzir o risco de perda dos dados locais.
+3. Ampliar conteúdo pedagógico: aulas de escalas/harmonia e grooves/articulações de baixo, com critérios de conclusão e testes musicais.
+4. Avaliar PWA/offline após definir atualização de cache e compatibilidade do armazenamento. Afinador e microfone ficam para uma proposta própria, com consentimento e validação.
+
+A Fase 3 não foi iniciada. A validação funcional da versão 3.1 está registrada; o encerramento administrativo da publicação depende da evidência Netlify descrita acima.

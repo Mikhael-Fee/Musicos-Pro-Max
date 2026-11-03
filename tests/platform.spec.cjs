@@ -122,6 +122,7 @@ test('comparison preserves chord answers when switching between bass and keyboar
  await explore(page,'bass-piano');await page.click('[data-page=practice]');await page.selectOption('#exercise-type','build');await page.selectOption('#exercise-chord-type','major');await page.click('#start-exercise');
  const text=await page.locator('#question').innerText(),chord=T.scale(0).map(n=>T.buildChord(n.pc,'major',n.name)).find(c=>text.includes(' '+c.name+'.'));await page.selectOption('#bass-region','all');
  for(const n of B.arpeggio(chord,8))await page.click(`#bass-${n.string}-${n.fret}`);
+ if(await page.locator('#comparison-tabs').isVisible())await page.click('#compare-piano');
  await page.click('#piano-key-48');await expect(page.locator('#answer-instrument')).toHaveValue('piano');
  await page.selectOption('#answer-instrument','bass');await expect(page.locator('#bass-render .chosen')).toHaveCount(3);await page.click('#confirm-answer');await expect(page.locator('#feedback')).toContainText('Acertou!');
 });
