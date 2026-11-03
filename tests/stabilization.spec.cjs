@@ -19,3 +19,18 @@ test('passive instrument changes after answering do not move lesson credit',asyn
 test('clicking the current practice area does not abandon the running question',async({page})=>{
  await page.click('[data-page=practice]');await page.click('#start-exercise');const question=await page.locator('#question').innerText();await page.click('[data-page=practice]');await expect(page.locator('#practice-session')).toBeVisible();await expect(page.locator('#question')).toHaveText(question);
 });
+test('rhythm BPM changes preserve focused controls and allow the next activity',async({page})=>{
+ const errors=[];page.on('pageerror',error=>errors.push(error.message));
+ await page.click('[data-page=practice]');await page.click('[data-feature=rhythm]');await page.locator('#rhythm-settings summary').click();
+ await page.evaluate(()=>{window.originalBpm=document.getElementById('rhythm-bpm');window.bpmChanges=0;originalBpm.addEventListener('change',()=>window.bpmChanges++);});
+ await page.fill('#rhythm-bpm','120');
+ await page.locator('#rhythm-bpm').dispatchEvent('change');
+ await expect(page.locator('#rhythm-bpm')).toBeFocused();
+ await page.locator('#rhythm-bpm').press('Tab');
+ expect(await page.evaluate(()=>originalBpm===document.getElementById('rhythm-bpm'))).toBe(true);
+ expect(await page.evaluate(()=>window.bpmChanges)).toBeLessThanOrEqual(2);
+ await expect(page.locator('#rhythm-bpm')).toHaveValue('120');await expect(page.locator('#rhythm-settings')).toHaveAttribute('open','');
+ await expect(page.locator('#rhythm-settings summary')).toContainText('120 BPM');
+ await page.click('#rhythm-start');await expect(page.locator('#rhythm-listen')).toBeVisible();
+ expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('musicospromax.rhythm.v1')).bpm)).toBe(120);expect(errors).toEqual([]);
+});
