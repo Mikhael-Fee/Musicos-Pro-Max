@@ -41,6 +41,8 @@ jobs:
         run: npm run test:unit
       - name: Testes de interface e áudio
         run: npm run test:e2e
+      - name: Testes mobile de ouvido e regressões da Fase 2
+        run: npm run test:mobile
       - name: Relatórios de diagnóstico
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v5

@@ -3,7 +3,7 @@
 'use strict';
 const R=RhythmTheory,S=StudyTheory,P=Platform,store=learningStore,$=id=>document.getElementById(id);
 const names={guitar:'Violão',piano:'Teclado',bass:'Baixo',general:'Ritmo · independente'};
-const skillNames={notes:'Notas',intervals:'Intervalos',degrees:'Graus',harmony:'Harmonia',chords:'Acordes',arpeggios:'Arpejos',scales:'Escalas','rhythm-perception':'Percepção rítmica','rhythm-reproduction':'Reprodução rítmica'};
+const skillNames={...TonalTheory.skills,notes:'Notas',intervals:'Intervalos',degrees:'Graus',harmony:'Harmonia',chords:'Acordes',arpeggios:'Arpejos',scales:'Escalas','rhythm-perception':'Percepção rítmica','rhythm-reproduction':'Reprodução rítmica'};
 const player=new RhythmPlayer();
 let launching=false,external=null,trial=null,lastPattern='',free=false;
 let preferences={bpm:80,meter:4,level:'auto',mode:'listen',timbre:'percussion',volume:80};
@@ -114,7 +114,8 @@ function renderDaily(){
 function launch(task,ctx){
  const normalized=S.task(task);if(!normalized)return;launching=true;external={...ctx,task:normalized};
  try{
-  if(normalized.type==='rhythm'){clearRhythm();preferences.mode=normalized.mode;preferences.meter=R.find(normalized.pattern).meter;preferences.level=String(R.find(normalized.pattern).level);P.show('rhythm');external={...ctx,task:normalized};renderRhythm();}
+  if(normalized.type==='tonal'){window.TonalFeature.startTask(normalized,ctx);}
+  else if(normalized.type==='rhythm'){clearRhythm();preferences.mode=normalized.mode;preferences.meter=R.find(normalized.pattern).meter;preferences.level=String(R.find(normalized.pattern).level);P.show('rhythm');external={...ctx,task:normalized};renderRhythm();}
   else if(normalized.type==='lesson'){
    if(ctx.instrument!=='general'){$('instrument').value=ctx.instrument;$('instrument').dispatchEvent(new Event('change'));}P.reviewQuestion(normalized,ctx.instrument,ctx);
   }else Studio.startTask(normalized,ctx);

@@ -4,7 +4,7 @@
   const progress = window.learningStore = LearningProgress.create({getItem:k=>localStorage.getItem(k),setItem:(k,v)=>localStorage.setItem(k,v)});
   const instrumentName = name => ({guitar:'Violão',piano:'Teclado',bass:'Baixo'}[name]);
   const skillOf = (type,instrument) => type==='build' ? instrument==='bass'?'arpeggios':'chords' : ({notes:'notes',ear:'intervals',degrees:'degrees',field:'harmony',scales:'scales'}[type]||type);
-  let comparisonFocus='guitar';
+  let comparisonFocus='guitar',tonalView=null;
   const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
   const settingsKey = 'musicospromax.settings.v2', statsKey = 'musicospromax.stats.v1';
   const settingIds = ['key', 'scale', 'instrument', 'explore-topic', 'field-format', 'chord-type', 'note-labels', 'play-style', 'inversion', 'piano-layout', 'guitar-view', 'scale-position', 'volume', 'guitar-volume', 'piano-volume', 'reference-instrument', 'feedback-sound', 'feedback-volume', 'bass-volume', 'bass-region', 'practice-policy', 'practice-difficulty', 'practice-length', 'cycle-policy', 'bass-pattern', 'cycle-direction', 'cycle-reference'];
@@ -16,7 +16,7 @@
   function key() { return Number($('key').value); }
   function scale() { return T.scale(key(), $('scale').value); }
   function field(seventh = $('field-format').value === 'seventh') { return Array.from({ length: 7 }, (_, i) => T.chord(key(), $('scale').value, i + 1, seventh)); }
-  function options() { return { labels: $('note-labels').value, instrument: $('instrument').value, guitarView: scene?.voicings ? 'standard' : $('guitar-view').value, position: position(), inversion: Number($('inversion').value), pianoLayout: $('piano-layout').value, instruments:visibleInstruments(),comparisonFocus,bassPosition: bassPosition(),bassAll:$('bass-region').value==='all' }; }
+  function options() { if(mode==='tonal'&&tonalView)return {labels:'letters',instrument:tonalView.instrument,instruments:[tonalView.instrument],guitarView:'all',position:0,bassPosition:0,bassAll:true,inversion:0,pianoLayout:'closed'};return { labels: $('note-labels').value, instrument: $('instrument').value, guitarView: scene?.voicings ? 'standard' : $('guitar-view').value, position: position(), inversion: Number($('inversion').value), pianoLayout: $('piano-layout').value, instruments:visibleInstruments(),comparisonFocus,bassPosition: bassPosition(),bassAll:$('bass-region').value==='all' }; }
   function position() { const value = $('scale-position').value; return value === 'root6' ? T.mod(key() - 4) : value === 'root5' ? T.mod(key() - 9) : 0; }
   function visibleInstruments() { return ({both:['guitar','piano'],'bass-piano':['bass','piano'],'bass-guitar':['bass','guitar'],all:['guitar','piano','bass']})[$('instrument').value] || [$('instrument').value]; }
   function bassPosition() {return $('bass-region').value==='auto'||$('bass-region').value==='all'?B.region(key()):Number($('bass-region').value);}
@@ -405,6 +405,7 @@
     else if (session.choice !== null) previewChoice(session.choices.find(c => c.value === session.choice));
   }
   function instrumentClick(n) {
+    if(mode==='tonal'){window.dispatchEvent(new CustomEvent('studio:tonal-note',{detail:n}));return;}
     if(mode==='lesson'){window.dispatchEvent(new CustomEvent('studio:note',{detail:n}));return;}
     if(session&&!session.answered&&session.policy==='challenge'&&['ear','degrees','field'].includes(session.type))return;
     if(session&&!session.answered&&(session.type==='scales'||session.type==='build'&&sourceOf(n)==='bass')){
@@ -687,7 +688,7 @@
   });
   $('feedback-sound').addEventListener('change', saveSettings);
   for (const [id, correct] of [['preview-success', true], ['preview-error', false]]) $(id).addEventListener('click', () => { try { soundEngine.feedback(correct); } catch (_) { $('audio-status').textContent = 'Não foi possível iniciar o áudio dos avisos.'; } });
-  $('silence').addEventListener('click', () => { if (guided) stopGuided(); stopCyclePlayback(); stopAudio(); });
+  $('silence').addEventListener('click', () => { window.dispatchEvent(new Event('studio:silence')); if (guided) stopGuided(); stopCyclePlayback(); stopAudio(); });
   $('play-scene').addEventListener('click', () => playScene());
   $('play-guitar').addEventListener('click', () => playScene('guitar'));
   $('play-piano').addEventListener('click', () => playScene('piano'));
@@ -736,7 +737,7 @@
     if(task.position){if(instrument==='bass')$('bass-region').value='all';else if(instrument==='guitar')$('guitar-view').value='all';}
     startPractice({task,external,restore,difficulty:external.difficulty||task.difficulty||1,length:1});
   }
-  window.Studio={startTask,hidden:pcs=>{cancelAudition();for(const instrument of visibleInstruments())pcs.forEach((pc,i)=>midiNote(noteLocation(pc,instrument),i*.65,instrument));},setMode,startPractice,compare:name=>{comparisonFocus=name;draw();},stop:()=>{endPractice();stopGuided();endCycleExercise();stopAudio();},lesson:(lessonScene)=>{mode='lesson';clearPalettes();scene=lessonScene;scene.scale ||= scale();$('scene-title').textContent=scene.title||'Demonstração';$('scene-category').textContent='APRENDER · OUVIR E TOCAR';$('scene-description').textContent=scene.description||'';$('play-scene').disabled=true;draw();},lessonPlay:(pcs,chordType)=>{if(chordType){const chord=T.buildChord(pcs[0],chordType);showChord(chord,'DEMONSTRAÇÃO');playChord(chord);}else{playArrangement(visibleInstruments().map(instrument=>({instrument,notes:pcs.map(pc=>noteLocation(pc,instrument))})),.5,false);}},select:n=>showSingle(n),render:draw,getInstrument:()=>visibleInstruments().includes(comparisonFocus)?comparisonFocus:visibleInstruments()[0]};
+  window.Studio={tonal:(view,instrument)=>{mode='tonal';tonalView={instrument};clearPalettes();scene={kind:'custom',scale:T.scale(0),selected:[],hideLabels:true,forceBoard:true,...view};for(const id of ['explore','practice','guided','cycles'])$(id+'-panel').hidden=true;$('scene-title').textContent='Seu instrumento · reproduza de ouvido';$('scene-category').textContent='OUVIDO RELATIVO';$('scene-description').textContent='';$('play-scene').disabled=true;draw();},startTask,hidden:pcs=>{cancelAudition();for(const instrument of visibleInstruments())pcs.forEach((pc,i)=>midiNote(noteLocation(pc,instrument),i*.65,instrument));},setMode,startPractice,compare:name=>{comparisonFocus=name;draw();},stop:()=>{endPractice();stopGuided();endCycleExercise();stopAudio();},lesson:(lessonScene)=>{mode='lesson';clearPalettes();scene=lessonScene;scene.scale ||= scale();$('scene-title').textContent=scene.title||'Demonstração';$('scene-category').textContent='APRENDER · OUVIR E TOCAR';$('scene-description').textContent=scene.description||'';$('play-scene').disabled=true;draw();},lessonPlay:(pcs,chordType)=>{if(chordType){const chord=T.buildChord(pcs[0],chordType);showChord(chord,'DEMONSTRAÇÃO');playChord(chord);}else{playArrangement(visibleInstruments().map(instrument=>({instrument,notes:pcs.map(pc=>noteLocation(pc,instrument))})),.5,false);}},select:n=>showSingle(n),render:draw,getInstrument:()=>visibleInstruments().includes(comparisonFocus)?comparisonFocus:visibleInstruments()[0]};
   window.addEventListener('resize',()=>{if(scene)draw();});
   exerciseHelp(); updateStats(); showExplore();
 })();

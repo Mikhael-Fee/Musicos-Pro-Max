@@ -3,8 +3,10 @@
 'use strict';
 const T=root.MusicTheory||(typeof require!=='undefined'?require('./theory.js'):null);
 const R=root.RhythmTheory||(typeof require!=='undefined'?require('./rhythm-core.js'):null);
+const A=root.TonalTheory||(typeof require!=='undefined'?require('./tonal-core.js'):null);
 const instrumentNames=['guitar','piano','bass','general'];
 function task(raw){
+ if(raw?.type==='tonal')return A.descriptor(raw);
  if(!raw||!['notes','ear','degrees','field','build','scales','lesson','rhythm'].includes(raw.type))return null;
  const out={type:raw.type,key:Number.isInteger(raw.key)&&raw.key>=0&&raw.key<12?raw.key:0,scale:raw.scale==='Menor'?'Menor':'Maior'};
  for(const [name,min,max] of [['pc',0,11],['degree',1,7],['distance',1,12],['contrast',1,12],['chordRoot',0,11],['index',0,20],['difficulty',1,3]])if(raw[name]!==undefined){if(!Number.isInteger(raw[name])||raw[name]<min||raw[name]>max)return null;out[name]=raw[name];}
@@ -48,6 +50,7 @@ function plan(state,instrument,minutes,now=Date.now(),manual='auto'){
  // Alternate the weakest area with known foundations, avoiding an entire session of one question type.
  const queue=[];for(let i=0;i<catalog.length;i++){const pick=i%2===0?prioritized.shift():prioritized.pop();if(pick)queue.push(pick);}
  for(const [descriptor,skill,label] of queue){if(items.length>=count)break;add(descriptor,skill,label,skill===weakest&&hasWeakness?'weakness':level(skill)>1?'challenge':'foundation',null,level(skill));}
+ if(items.length>=3&&!items.some(t=>t.task.type==='tonal')){const skill=Object.keys(A.skills)[(state.dailyPlans||[]).length%5],difficulty=level(skill),p=A.bank.find(p=>p.skill===skill&&p.level===difficulty);const candidate={task:A.descriptor({pattern:p.id,key:0}),skill,label:'Ouvido · '+A.skills[skill],source:'foundation',reviewId:null,instrument,difficulty};let index=items.findIndex((t,i)=>i>=2&&t.source!=='review'&&t.task.type==='notes');if(index<0)index=items.findIndex(t=>t.source!=='review'&&t.task.type!=='rhythm');if(index>=0)items[index]=candidate;}
  const challenge=items.at(-1);if(challenge&&challenge.source!=='review'){challenge.source='challenge';if(challenge.task.type==='notes'){challenge.task.pc=1;challenge.label='Localizar Dó♯ · semitom acima de Dó';}if(challenge.task.type==='build'){challenge.task.chordType=challenge.difficulty===1?'minor':'7';challenge.label=(instrument==='bass'?'Arpejo':'Formação')+' de '+(challenge.difficulty===1?'Cm · compare a terça com C':'C7 · acrescente a sétima menor');}challenge.difficulty=Math.min(3,challenge.difficulty+1);}
  return {instrument,minutes,tasks:items.slice(0,count),estimated:true};
 }

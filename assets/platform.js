@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 const $=id=>document.getElementById(id),store=window.learningStore,content=CourseContent,T=MusicTheory;
-const names={guitar:'Violão',piano:'Teclado',bass:'Baixo',general:'Ritmo · independente'},skills={notes:'Localização de notas',intervals:'Intervalos',chords:'Formação de acordes',arpeggios:'Arpejos',scales:'Escalas',degrees:'Graus',harmony:'Campo harmônico',cycles:'Ciclos',progressions:'Progressões',daily:'Treino diário','rhythm-perception':'Percepção rítmica','rhythm-reproduction':'Reprodução rítmica'};
+const names={guitar:'Violão',piano:'Teclado',bass:'Baixo',general:'Ritmo · independente'},skills={notes:'Localização de notas',intervals:'Intervalos',chords:'Formação de acordes',arpeggios:'Arpejos',scales:'Escalas',degrees:'Graus',harmony:'Campo harmônico',cycles:'Ciclos',progressions:'Progressões',daily:'Treino diário',...TonalTheory.skills,'rhythm-perception':'Percepção rítmica','rhythm-reproduction':'Reprodução rítmica'};
 let page='home',lesson=null,previousTheory=null;const features={};
 function el(tag,text,cls){const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;}
 function button(text,handler,cls){const b=el('button',text,cls);b.type='button';b.addEventListener('click',handler);return b;}
@@ -10,13 +10,13 @@ function currentUnit(){return content.units.find(u=>!store.get().lessons[(u.inde
 function finishLesson(){$('learn-unit-panel').hidden=true;$('lesson-examples').hidden=true;if(lesson){if(!lesson.external?.dailyId)store.end(lesson.run,false);lesson=null;}document.body.dataset.rhythmLesson='false';if(previousTheory){$('key').value=previousTheory.key;$('scale').value=previousTheory.scale;previousTheory=null;}for(const id of ['key','scale'])$(id).disabled=false;}
 function sync(next){
  if(page!==next){features[page]?.leave?.();window.dispatchEvent(new CustomEvent('study:navigate',{detail:next}));}page=next;document.body.dataset.page=page;
- for(const b of document.querySelectorAll('.primary-nav button')){b.setAttribute('aria-current',b.dataset.page===(['rhythm','reviews','daily'].includes(page)?'practice':page)?'page':'false');b.setAttribute('aria-pressed',String(b.dataset.page===(['rhythm','reviews','daily'].includes(page)?'practice':page)));}
+ for(const b of document.querySelectorAll('.primary-nav button')){b.setAttribute('aria-current',b.dataset.page===(['ear','rhythm','reviews','daily'].includes(page)?'practice':page)?'page':'false');b.setAttribute('aria-pressed',String(b.dataset.page===(['ear','rhythm','reviews','daily'].includes(page)?'practice':page)));}
  $('home-page').hidden=page!=='home';$('learn-page').hidden=page!=='learn'||!!lesson;
- $('studio-core').hidden=!['practice','explore'].includes(page)&&!lesson;
- $('practice-tabs').hidden=!['practice','rhythm','reviews','daily'].includes(page);for(const id of ['rhythm','reviews','daily'])$(id+'-page').hidden=page!==id;for(const b of document.querySelectorAll('[data-feature]'))b.setAttribute('aria-pressed',String(b.dataset.feature===page));if(['rhythm','reviews','daily'].includes(page))for(const b of document.querySelectorAll('#practice-tabs [data-mode]'))b.setAttribute('aria-pressed','false');
+ $('studio-core').hidden=!['practice','explore','ear'].includes(page)&&!lesson;
+ $('practice-tabs').hidden=!['practice','ear','rhythm','reviews','daily'].includes(page);for(const id of ['ear','rhythm','reviews','daily'])$(id+'-page').hidden=page!==id;for(const b of document.querySelectorAll('[data-feature]'))b.setAttribute('aria-pressed',String(b.dataset.feature===page));if(['ear','rhythm','reviews','daily'].includes(page))for(const b of document.querySelectorAll('#practice-tabs [data-mode]'))b.setAttribute('aria-pressed','false');
  if(page==='home')renderHome();if(page==='learn'&&!lesson)renderCatalog();if(page!=='home')features[page]?.render?.();
 }
-function show(next){if(next===page&&['practice','rhythm'].includes(next))return;finishLesson();Studio.stop();if(next==='practice'||next==='explore'){Studio.setMode(next==='practice'?'practice':'explore');return;}sync(next);window.scrollTo(0,0);}
+function show(next){if(next===page&&['practice','ear','rhythm'].includes(next))return;finishLesson();Studio.stop();if(next==='practice'||next==='explore'){Studio.setMode(next==='practice'?'practice':'explore');return;}sync(next);window.scrollTo(0,0);}
 for(const b of document.querySelectorAll('[data-feature]'))b.addEventListener('click',()=>show(b.dataset.feature));
 window.addEventListener('studio:mode',e=>{finishLesson();sync(e.detail==='explore'?'explore':'practice');window.scrollTo(0,0);});
 for(const b of document.querySelectorAll('[data-page]'))if(!b.dataset.mode)b.addEventListener('click',()=>show(b.dataset.page));
@@ -44,7 +44,7 @@ function renderHome(){
  features.home?.render?.(container);
  if(!store.writable)container.append(el('p','Há um registro de progresso incompatível neste navegador. Ele foi preservado; os novos resultados ficam apenas na memória nesta sessão.','notice'));
 }
-function startSkill(skill){show('practice');$('exercise-type').value=({intervals:'ear',chords:'build',arpeggios:'build',harmony:'field',degrees:'degrees',scales:'scales'}[skill]||'notes');$('exercise-type').dispatchEvent(new Event('change'));}
+function startSkill(skill){if(skill.startsWith('tonal-')){window.TonalFeature.openSkill(skill);return;}show('practice');$('exercise-type').value=({intervals:'ear',chords:'build',arpeggios:'build',harmony:'field',degrees:'degrees',scales:'scales'}[skill]||'notes');$('exercise-type').dispatchEvent(new Event('change'));}
 function renderCatalog(){const container=$('learn-page');container.replaceChildren(el('p','APRENDER COM SENTIDO','eyebrow'),el('h1','Uma habilidade de cada vez.'),el('p','Siga as aulas iniciais e as duas unidades de ritmo ou abra qualquer assunto já publicado. Cada aula inclui exemplos, prática e revisão.','muted'));
  const grid=el('div',undefined,'course-grid');for(const [id,title,description] of content.tracks){const card=el('article',undefined,'dashboard-card');card.append(el('h2',title),el('p',description,'muted'));const units=content.units.filter(u=>u.track===id);for(const u of units){const completed=store.get().lessons[(u.independent?'general':activeInstrument())+':'+u.id]?.completed;card.append(el('p',u.objective),button((completed?'✓ Revisar · ':'Começar · ')+u.title+' · '+u.minutes+' min',()=>openUnit(u.id),'primary'));}if(!units.length)card.append(el('p','Conteúdo futuro · ainda não publicado','future-label'));grid.append(card);}container.append(grid);container.append(button('Abrir treinamento de Ritmo',()=>show('rhythm'),'primary'));}
 function openUnit(id){

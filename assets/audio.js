@@ -70,7 +70,7 @@
       this.voices.add(source); this.voiceChannels.set(source, { channel, gain: nodes[0], startedAt, group, released: false });
       source.onended = () => { this.voices.delete(source); this.voiceChannels.delete(source); source.disconnect(); nodes.forEach(n => n.disconnect()); };
     }
-    note(pitch, instrument = 'piano', delay = 0, at, channel = instrument) {
+    note(pitch, instrument = 'piano', delay = 0, at, channel = instrument, duration = null) {
       const ctx = this.init();
       this.trimVoices();
       const group = ++this.noteSequence;
@@ -97,6 +97,12 @@
           this.track(osc, [gain], channel, start, group); osc.start(start); osc.stop(start + partial.duration + .03);
         }
       }
+      if (Number.isFinite(duration) && duration > 0) for (const [source, voice] of this.voiceChannels) if (voice.group === group) {
+        voice.gain.gain.cancelScheduledValues(start + duration);
+        voice.gain.gain.setTargetAtTime(.0001, start + duration, .012);
+        source.stop(start + duration + .08);
+      }
+      return group;
     }
     tick(accent = false, delay = 0, when, channel = 'metronome') {
       const ctx = this.init(), source = ctx.createOscillator(), gain = ctx.createGain(), at = when ?? ctx.currentTime + delay;

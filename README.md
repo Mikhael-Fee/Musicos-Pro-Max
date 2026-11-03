@@ -1,6 +1,6 @@
 # Músicos Pro Max
 
-Plataforma estática de aprendizagem e prática musical em português para **violão, teclado e contrabaixo elétrico de quatro cordas**. Sem cadastro, banco, backend, serviços externos de áudio ou novas dependências de produção. A versão 3.1 implementa a Fase 2: ritmo, revisão de erros, treino diário e dificuldade adaptativa, preservando o laboratório e os treinos anteriores. [Regras técnicas e limites da Fase 2](docs/PHASE2.md).
+Plataforma estática de aprendizagem e prática musical em português para **violão, teclado e contrabaixo elétrico de quatro cordas**. Sem cadastro, banco, backend, serviços externos de áudio ou novas dependências de produção. A versão 3.2 implementa a Fase 3A: Percepção Tonal em Praticar → Ouvido, preservando ritmo, revisões, treino diário, adaptação e o laboratório da Fase 2. [Regras técnicas e limites da Fase 2](docs/PHASE2.md).
 
 ## Interface e aprendizagem
 
@@ -18,6 +18,14 @@ Os instrumentos podem ser alternados durante a atividade, preservando questão e
 A configuração principal tem tom, escala e visualização. Inversões/posição aberta ou fechada ficam no teclado; regiões do braço e volumes ficam nos respectivos instrumentos. Ajustes contém volume geral e avisos de acerto/erro, com prévias e volume próprio (85% inicial).
 
 Alterações recebem azul forte; sextas, sétimas e extensões 9/11/13 recebem rosa nos botões, teclas ativas e pontos. Nomes, graus, símbolos e feedback textual complementam as cores. Os rótulos não aparecem nos exercícios de localizar notas antes da tentativa.
+
+## Ouvido · percepção tonal (Fase 3A)
+
+Em **Praticar → Ouvido**, escolha sensação/direção, centro tonal, graus, movimentos harmônicos ou reprodução melódica. O treino de intervalos anterior está acessível na mesma área. Uma referência I–IV–V–I estabelece o tom; ouça a pergunta inteira antes de confirmar. Escolha um dos 12 tons maiores ou sorteie outro entre atividades. O tom e o instrumento ficam fixos na atividade.
+
+São 84 exemplos originais, com três dificuldades por habilidade: direção/repetição/retorno; tônica, repouso contextual e cadências; graus e progressões; melodias de três a sete notas. No baixo, acordes são arpejos. Ouvir não destaca as notas corretas. Na reprodução, digitações alternativas e a frase inteira em outra oitava são aceitas, preservando os intervalos; ritmo e execução física não são pontuados. Após a resposta, compare o modelo com sua sequência ou ouça um exemplo da alternativa escolhida.
+
+A ajuda é progressiva e explícita. Tentativas assistidas ficam como observações sem nota, não alimentam domínio e não avançam revisões. As cinco habilidades novas têm resultados separados por instrumento; erros podem ser revistos e planos diários novos incluem escuta tonal. Planos antigos e dados da Fase 2 são preservados. Consulte [arquitetura, critérios e limites da Fase 3A](docs/PHASE3A.md).
 
 ## Progresso local e migração
 
@@ -119,6 +127,7 @@ O servidor de desenvolvimento usa a porta 5173. Não são necessárias variávei
 npm run build   # somente os arquivos públicos em dist/
 npm test        # teoria, voicings, áudio e interação no site gerado
 npm run test:unit
+npm run test:mobile # ouvido e regressões da Fase 2 em Chromium móvel com toque
 ```
 
 Os testes de navegador usam o Chromium do sistema quando disponível ou o instalado pelo Playwright. `CHROMIUM_PATH` permite escolher o executável. Se necessário:
@@ -154,4 +163,4 @@ O projeto Netlify existente publica `dist/` com `npm run build`. Envie para uma 
 
 ## Escopo e próximos passos
 
-Consulte a [auditoria histórica da Fase 1](docs/PHASE1.md), a [estabilização](docs/STABILIZATION.md), a [Fase 2 implementada](docs/PHASE2.md) e o [estado da entrega 3.1](docs/RELEASE-3.1.md). A Fase 3 pode aprofundar grooves, validar latência em aparelhos reais, permitir exportação do progresso e avaliar PWA, afinador e microfone com critérios próprios de precisão.
+Consulte a [auditoria histórica da Fase 1](docs/PHASE1.md), a [estabilização](docs/STABILIZATION.md), a [Fase 2 implementada](docs/PHASE2.md) e o [estado da entrega 3.1](docs/RELEASE-3.1.md). A [Fase 3A](docs/PHASE3A.md) acrescenta percepção tonal. Grooves, validação em aparelhos reais, exportação/importação, PWA, afinador e microfone permanecem no planejamento; não foram implementados nesta entrega.
