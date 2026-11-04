@@ -6,7 +6,7 @@
 4. Se aparecer “repository is empty”, aguarde o primeiro envio para `main`, atualize a página e selecione novamente.
 5. Configure a branch de produção como `main`, diretório base vazio, comando `npm run build` e diretório de publicação `dist`. O `netlify.toml` já contém o comando e o diretório.
 6. Conclua em **Deploy project** ou equivalente. Acompanhe a implantação em **Deploys** até **Published**.
-7. Abra `https://musicospromax.netlify.app/` e confira a identificação 3.2, as áreas Início / Aprender / Praticar / Explorar, cinco aulas, Ouvido / Ritmo / Revisar / Treino diário e a opção Baixo, o violão em posição usual e a progressão 4–5–6–3. Teste o áudio após tocar em uma nota.
+7. Abra `https://musicospromax.netlify.app/` e confira a identificação 3.2.1, as áreas Início / Aprender / Praticar / Explorar, cinco aulas, Ouvido / Ritmo / Revisar / Treino diário e a opção Baixo, o violão em posição usual e a progressão 4–5–6–3. Teste o áudio após tocar em uma nota.
 
 Depois do vínculo, novos commits em `main` disparam a publicação automaticamente, desde que os deploys automáticos estejam ativos. Uma atualização do Git não prova que o Netlify publicou: confirme o estado **Published** e o SHA do commit em **Deploys**. A validação do GitHub Actions é independente; por padrão o Netlify não espera essa validação. Trabalhe em uma branch, execute `npm test` e `npm run build`, envie a branch e confirme o GitHub Actions antes de integrar em `main`. Se a validação remota estiver indisponível, mantenha a mudança na branch/PR e documente a pendência.
 

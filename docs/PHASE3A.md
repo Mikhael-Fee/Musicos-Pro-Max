@@ -1,5 +1,7 @@
 # Fase 3A — Ouvido e percepção tonal · versão 3.2
 
+Este documento registra a entrega 3.2. A [versão 3.2.1](RELEASE-3.2.1.md) revisa a preparação sonora, a entrada inicial e os modos de aprendizagem sem iniciar a Fase 3B.
+
 ## Objetivo e integração
 
 Praticar → Ouvido reúne um acesso ao treinamento de intervalos já existente e a nova percepção tonal. A navegação principal continua Início / Aprender / Praticar / Explorar. O objetivo é escutar, manter uma referência, memorizar relações e responder; não há avaliação de ouvido absoluto nem execução física.

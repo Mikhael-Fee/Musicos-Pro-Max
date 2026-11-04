@@ -4,13 +4,13 @@
 class TonalPlayer{
  constructor(engine=root.soundEngine){this.engine=engine;this.token=0;this.timer=null;this.phases=new Set();}
  stop(){this.token++;clearTimeout(this.timer);this.timer=null;this.phases.forEach(clearTimeout);this.phases.clear();this.engine.stop();}
- async play(material,{reference=true,answer=null,onEnd=()=>{},onPhase=()=>{}}={}){
+ async play(material,{reference=TonalTheory.needsReference(material),answer=null,onEnd=()=>{},onPhase=()=>{}}={}){
   this.stop();const token=this.token,ctx=this.engine.init();if(ctx.state==='suspended'&&typeof ctx.startRendering!=='function')await ctx.resume();if(token!==this.token)return null;
   const phase=(time,name)=>{if(typeof ctx.startRendering==='function')return;const id=setTimeout(()=>{this.phases.delete(id);if(token===this.token)onPhase(name);},Math.max(0,time-ctx.currentTime)*1000);this.phases.add(id);};
   const instrument=material.instrument||'piano',base=material.base;let at=ctx.currentTime+.12;const events=[];
   const note=(midi,time,duration=.42)=>{events.push({midi,at:time,instrument});this.engine.note(midi-48,instrument,0,time,instrument,duration);};
   const chord=(degree,time)=>{const c=MusicTheory.chord(material.key,'Maior',degree+1),root=base+TonalTheory.offset(degree);c.notes.forEach((n,i)=>note(root+MusicTheory.mod(n.pc-c.root),time+(instrument==='bass'?i*.14:0),instrument==='bass'?.24:.55));};
-  if(reference){phase(at,'reference');for(const degree of [0,3,4,0]){chord(degree,at);at+=.65;}at+=.35;}
+  if(reference&&TonalTheory.needsReference(material)){phase(at,'reference');for(const degree of [0,3,4,0]){chord(degree,at);at+=.65;}at+=.35;}
   const start=at;phase(at,material.kind==='completion'?'model':'question');
   if(answer){for(const midi of answer){note(midi,at);at+=.5;}}
   else if(['cadence','progression','next-chord','completion'].includes(material.kind)){for(const d of material.notes){chord(d,at);at+=.85;}if(material.kind==='completion'){at+=.6;phase(at,'excerpt');for(const d of material.notes.slice(0,-1)){chord(d,at);at+=.85;}}}

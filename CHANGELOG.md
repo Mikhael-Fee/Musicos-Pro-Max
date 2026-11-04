@@ -1,5 +1,13 @@
 # Histórico
 
+## 3.2.1 — 04/11/2026
+
+- Direção e melodias iniciais sem cadência; referências mantidas por habilidade nos exercícios contextuais, inclusive nas repetições.
+- Introdução prática opcional com demonstrações de subida, descida e repetição. Duas notas com um clique para ouvir e resposta direta; configurações e explicações extensas recolhidas.
+- Aprender sem nota, Praticar com assistência explícita e Desafio com avaliação independente e dificuldade mínima intermediária. Dados e esquema anteriores preservados.
+- Direção com alturas/registros variados e frases ampliadas maiores; revisões mantêm transposição e oitava. Comparações sonoras continuam interrompíveis.
+- Novos testes de política de áudio nos três timbres, modos, persistência, entrada simples e integração de revisões/tarefas diárias. Sem recursos da Fase 3B.
+
 ## 3.2.0 — 03/11/2026 · Fase 3A
 
 - Praticar → Ouvido reúne o acesso aos intervalos existentes e cinco habilidades de percepção tonal, com 89 variações de exercícios originais em 12 tonalidades maiores e três dificuldades por habilidade.

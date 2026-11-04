@@ -54,10 +54,11 @@ function create(storage,{now=Date.now}={}){
  function record(meta){
   const {skill,instrument,correct,difficulty=2,session,question}=meta;
   if(!instruments.includes(instrument)||!/^[-a-z]+$/.test(skill)||typeof correct!=='boolean'||!canRecord(meta))return false;
-  const key=instrument+':'+skill,s=state.skills[key]||(state.skills[key]={attempts:0,correct:0,recent:[]});s.attempts++;s.correct+=Number(correct);s.recent.push({correct,difficulty,session:String(session),question:String(question),at:stamp()});s.recent=s.recent.slice(-20);
+  if(!meta.assessmentOnly){const key=instrument+':'+skill,s=state.skills[key]||(state.skills[key]={attempts:0,correct:0,recent:[]});s.attempts++;s.correct+=Number(correct);s.recent.push({correct,difficulty,session:String(session),question:String(question),at:stamp()});s.recent=s.recent.slice(-20);}
   const run=state.sessions.find(s=>s.id===session);if(run){run.attempts++;run.correct+=Number(correct);run.instruments=[...new Set([...(run.instruments||[]),instrument])];if(run.attempts===1)run.instrument=instrument;}
   if(meta.attemptId)state.seenAttempts.push(meta.attemptId);state.seenAttempts=state.seenAttempts.slice(-500);
-  review({...meta,difficulty},correct);if(meta.dailyId)dailyResult(meta,correct);persist();return true;
+  if(meta.assessmentOnly&&run)run.assessment=true;
+  if(!meta.assessmentOnly)review({...meta,difficulty},correct);if(meta.dailyId)dailyResult(meta,correct);persist();return true;
  }
  function observe(session,observation,metadata={}){
   if(!canRecord(metadata))return false;

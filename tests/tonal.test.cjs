@@ -46,3 +46,17 @@ test('every skill can progress through both adaptive thresholds in a fixed key',
  }
  const m=A.material({pattern:'degree-context-0',key:6});assert.equal(m.answer,'2');assert.match(A.explanation(m),/3º grau/);assert.match(A.explanation(m),/última nota/);
 });
+test('reference policy follows the listening skill, not a global preparation rule',()=>{
+ for(const p of A.bank){const expected=p.skill!=='tonal-direction'&&!(p.skill==='tonal-melody'&&p.level===1);assert.equal(A.needsReference(p),expected,p.id);}
+});
+test('direction practice varies registers safely and saved transpositions replay exactly',()=>{
+ for(const instrument of ['guitar','piano','bass'])for(let key=0;key<12;key++){
+  const task=A.choose('tonal-direction',key,1,()=>0),varied=A.varyRegister(task,instrument,()=>1),material=A.material(varied,instrument);assert.deepEqual(material.midi.map(n=>n-material.base),A.material(task,instrument).midi.map(n=>n-A.material(task,instrument).base));assert.deepEqual(S.task(varied),varied);assert.equal(A.contour(material.midi),'up');
+ }
+ assert.equal(S.task({type:'tonal',pattern:'direction-1-0',key:0,registerShift:7}),null);
+ for(let i=0;i<20;i++)assert.ok(A.material(A.choose('tonal-direction',0,3)).notes.length>=5);
+});
+test('challenge scores persist independently and never modify practice or adaptive evidence',()=>{
+ const f=fixture();const existing=f.store.begin('tonal-direction','bass');f.store.record({session:existing,skill:'tonal-direction',instrument:'bass',correct:true,question:'old'});f.store.end(existing,true);const before=f.store.get().skills;
+ const run=f.store.begin('tonal-direction','bass','tonal-challenge',2),task=A.choose('tonal-direction',0,2,()=>0),meta={session:run,skill:'tonal-direction',instrument:'bass',correct:false,question:S.key(task),task,assessmentOnly:true,attemptId:run+':challenge'};assert.equal(f.store.record(meta),true);assert.equal(f.store.record(meta),false);f.store.end(run,true);const restored=P.create(f.storage).get();assert.deepEqual(restored.skills,before);assert.equal(restored.reviews.length,0);assert.equal(restored.sessions.at(-1).assessment,true);assert.equal(restored.sessions.at(-1).attempts,1);assert.equal(restored.sessions.at(-1).correct,0);
+});

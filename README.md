@@ -1,6 +1,6 @@
 # Músicos Pro Max
 
-Plataforma estática de aprendizagem e prática musical em português para **violão, teclado e contrabaixo elétrico de quatro cordas**. Sem cadastro, banco, backend, serviços externos de áudio ou novas dependências de produção. A versão 3.2 implementa a Fase 3A: Percepção Tonal em Praticar → Ouvido, preservando ritmo, revisões, treino diário, adaptação e o laboratório da Fase 2. [Regras técnicas e limites da Fase 2](docs/PHASE2.md).
+Plataforma estática de aprendizagem e prática musical em português para **violão, teclado e contrabaixo elétrico de quatro cordas**. Sem cadastro, banco, backend, serviços externos de áudio ou novas dependências de produção. A versão 3.2.1 aprimora pedagogicamente a Fase 3A: Percepção Tonal em Praticar → Ouvido, preservando ritmo, revisões, treino diário, adaptação e o laboratório da Fase 2. [Regras técnicas e limites da Fase 2](docs/PHASE2.md).
 
 ## Interface e aprendizagem
 
@@ -21,11 +21,11 @@ Alterações recebem azul forte; sextas, sétimas e extensões 9/11/13 recebem r
 
 ## Ouvido · percepção tonal (Fase 3A)
 
-Em **Praticar → Ouvido**, escolha sensação/direção, centro tonal, graus, movimentos harmônicos ou reprodução melódica. O treino de intervalos anterior está acessível na mesma área. Uma referência I–IV–V–I estabelece o tom; ouça a pergunta inteira antes de confirmar. Escolha um dos 12 tons maiores ou sorteie outro entre atividades. O tom e o instrumento ficam fixos na atividade.
+Em **Praticar → Ouvido**, escolha sensação/direção, centro tonal, graus, movimentos harmônicos ou reprodução melódica. O treino de intervalos anterior está acessível na mesma área. Direção e reprodução inicial tocam diretamente; centro tonal, graus, harmonia e melodias mais avançadas mantêm referência. A direção inicial começa com duas notas e alternativas diretas, com introdução prática opcional. Escolha um dos 12 tons maiores ou sorteie outro entre atividades. O tom e o instrumento ficam fixos na atividade.
 
-São 89 variações de exercícios originais, com três dificuldades por habilidade: direção/repetição/retorno; tônica, repouso contextual e cadências; graus e progressões; melodias de três a sete notas. No baixo, acordes são arpejos. Ouvir não destaca as notas corretas. Na reprodução, digitações alternativas e a frase inteira em outra oitava são aceitas, preservando os intervalos; ritmo e execução física não são pontuados. Após a resposta, compare o modelo com sua sequência ou ouça um exemplo da alternativa escolhida.
+São 92 variações de exercícios originais, com três dificuldades por habilidade: direção/repetição/retorno; tônica, repouso contextual e cadências; graus e progressões; melodias de três a sete notas. No baixo, acordes são arpejos. Ouvir não destaca as notas corretas. Na reprodução, digitações alternativas e a frase inteira em outra oitava são aceitas, preservando os intervalos; ritmo e execução física não são pontuados. Após a resposta, compare o modelo com sua sequência ou ouça um exemplo da alternativa escolhida.
 
-A ajuda é progressiva e explícita. Tentativas assistidas ficam como observações sem nota, não alimentam domínio e não avançam revisões. As cinco habilidades novas têm resultados separados por instrumento; erros podem ser revistos e planos diários novos incluem escuta tonal. Planos antigos e dados da Fase 2 são preservados. Consulte [arquitetura, critérios e limites da Fase 3A](docs/PHASE3A.md).
+**Aprender** oferece orientação sem nota; **Praticar** registra respostas autônomas; **Desafio** avalia do intermediário em diante em sessões separadas, sem alimentar a adaptação. Consulte a [revisão pedagógica 3.2.1](docs/RELEASE-3.2.1.md). A ajuda é progressiva e explícita. Tentativas assistidas ficam como observações sem nota, não alimentam domínio e não avançam revisões. As cinco habilidades novas têm resultados separados por instrumento; erros podem ser revistos e planos diários novos incluem escuta tonal. Planos antigos e dados da Fase 2 são preservados. Consulte [arquitetura, critérios e limites da Fase 3A](docs/PHASE3A.md).
 
 ## Progresso local e migração
 

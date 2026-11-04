@@ -1,6 +1,6 @@
 {
   "name": "musicos-pro-max",
-  "version": "3.2.0",
+  "version": "3.2.1",
   "private": true,
   "description": "Aprendizagem musical para violão, teclado e baixo, com ritmo, revisão e estudo diário",
   "scripts": {
