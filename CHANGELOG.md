@@ -1,5 +1,12 @@
 # Histórico
 
+## 3.2.2 — 10/11/2026
+
+- Teclado virtual toca ao pressionar, sem aguardar a liberação, e evita ataques duplicados do clique posterior. Ativação por teclado e acessibilidade preservada.
+- Áudio manual antes da renderização, sem fila de feedback; teclas e seleção atualizadas sem reconstruir o piano a cada toque livre.
+- Contexto de áudio com preferência interativa e resposta visual sem transição de cor no piano.
+- Testes de ataques rápidos, múltiplos dedos, identidade das teclas, ordem áudio/renderização e bloqueio de prévias no desafio, também no mobile.
+
 ## 3.2.1 — 04/11/2026
 
 - Direção e melodias iniciais sem cadência; referências mantidas por habilidade nos exercícios contextuais, inclusive nas repetições.

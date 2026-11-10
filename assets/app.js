@@ -105,8 +105,12 @@
     return { midi: scene.kind === 'chord' ? chordPitches(scene.chord, 'piano').find(n => n.midi % 12 === pc)?.midi ?? 48 + pc : 48 + pc };
   }
   function showSingle(n) {
-    const instrument = sourceOf(n); scene.selected = [{ ...n, instrument }]; draw();
-    playSeries([n], 0, instrument); $('live-note').textContent = describeNote(n);
+    const instrument = sourceOf(n);
+    // Manual playing must not wait for layout or a previous feedback sound.
+    cancelAudition(); midiNote(n, 0, instrument);
+    scene.selected = [{ ...n, instrument }];
+    if (instrument !== 'piano' || !InstrumentUI.selectPiano(scene)) draw();
+    $('live-note').textContent = describeNote(n);
   }
   function clearPalettes() { $('chord-palette').replaceChildren(); $('chord-palette').classList.remove('cycle-palette'); $('note-palette').replaceChildren(); }
   function notePalette(ns) {
@@ -711,9 +715,17 @@
   $('next-cycle-question').addEventListener('click', cycleQuestion);
   $('end-cycle-exercise').addEventListener('click', () => { endCycleExercise('Treino encerrado; respostas registradas foram mantidas.'); stopAudio(); showCyclePreview(); });
   $('reset-stats').addEventListener('click', () => { stats = { attempts: 0, correct: 0, sessions: 0 }; save(statsKey, stats); updateStats(); });
+  // A physical piano press starts audio immediately; release/click must not replay it.
+  $('workspace').addEventListener('pointerdown', event => {
+    const target = event.target.closest('#piano-render [data-midi]');
+    if (!target || event.button !== 0) return;
+    event.preventDefault(); target.focus({ preventScroll: true });
+    instrumentClick({ midi: Number(target.dataset.midi), instrument: 'piano' });
+  });
   $('workspace').addEventListener('click', event => {
     const target = event.target.closest('[data-midi]');
     if (!target) return;
+    if (window.PointerEvent && target.closest('#piano-render') && event.detail > 0) return;
     const n = { midi: Number(target.dataset.midi),instrument:target.dataset.instrument||(target.dataset.string!==undefined?'guitar':'piano') };
     if (target.dataset.string !== undefined) { n.string = Number(target.dataset.string); n.fret = Number(target.dataset.fret); }
     instrumentClick(n);

@@ -38,7 +38,7 @@
       if (!this.context) {
         const AudioContext = root.AudioContext || root.webkitAudioContext;
         if (!AudioContext) throw new Error('Este navegador não oferece Web Audio.');
-        this.context = new AudioContext();
+        this.context = new AudioContext({ latencyHint: 'interactive' });
       }
       if (!this.master) {
         this.master = this.context.createGain(); this.master.gain.value = this.volume;

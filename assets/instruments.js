@@ -28,6 +28,8 @@
     const lo = Math.min(48, ...pitches, ...selected), hi = Math.max(71, ...pitches, ...selected);
     const start = Math.floor(lo / 12) * 12, end = Math.floor(hi / 12) * 12 + 11;
     const whiteCount = Array.from({ length: end - start + 1 }, (_, i) => i + start).filter(m => ![1, 3, 6, 8, 10].includes(m % 12)).length;
+    const container = $('piano-render'), range = start + ':' + end;
+    const rebuild = container.dataset.range !== range || container.children.length !== end - start + 1;
     let whiteIndex = 0, html = '';
     for (let midi = start; midi <= end; midi++) {
       const pc = midi % 12, black = [1, 3, 6, 8, 10].includes(pc);
@@ -37,11 +39,20 @@
       const style = black ? `width:${64 / whiteCount}%;left:${(whiteIndex - .32) * 100 / whiteCount}%` : `width:${100 / whiteCount}%`;
       const note = scene.chord?.notes.find(n => n.pc === pc);
       const badge = active && !scene.hideLabels && T.isColorTone(note) ? `<small class="tone-badge">${escape(note.role)}</small>` : '';
-      html += `<button type="button" id="piano-key-${midi}" class="${black ? 'black' : 'white'} ${classes(scene, pc, midi, undefined, undefined, active)}" style="${style}" data-midi="${midi}" aria-label="${escape(accessible)}" aria-pressed="${!!chosen(scene, midi)}"><span>${escape(text)}</span>${badge}</button>`;
+      const className = `${black ? 'black' : 'white'} ${classes(scene, pc, midi, undefined, undefined, active)}`;
+      const pressed = String(!!chosen(scene, midi)), content = `<span>${escape(text)}</span>${badge}`;
+      if (rebuild) html += `<button type="button" id="piano-key-${midi}" class="${className}" style="${style}" data-midi="${midi}" aria-label="${escape(accessible)}" aria-pressed="${pressed}">${content}</button>`;
+      else {
+        const key = $('piano-key-' + midi);
+        if (key.className !== className) key.className = className;
+        if (key.getAttribute('aria-label') !== accessible) key.setAttribute('aria-label', accessible);
+        if (key.getAttribute('aria-pressed') !== pressed) key.setAttribute('aria-pressed', pressed);
+        if (key.innerHTML !== content) key.innerHTML = content;
+      }
       if (!black) whiteIndex++;
     }
     $('piano-render').style.setProperty('--piano-min', `${Math.max(320, whiteCount * 24)}px`);
-    $('piano-render').innerHTML = html;
+    if (rebuild) { container.innerHTML = html; container.dataset.range = range; }
     $('piano-register').textContent = `C${start / 12 - 1}–B${Math.floor(end / 12) - 1}${scene.kind === 'chord' ? ' · baixo: ' + label(pitches[0] % 12, scene, 'letters') + (Math.floor(pitches[0] / 12) - 1) : ' · toque para ouvir'}`;
     return pitches;
   }
@@ -144,6 +155,17 @@
     $('bass-render').innerHTML=html+'</div></div>';
     $('bass-description').textContent=`Casas ${start}–${end} · 1ª corda (Sol) no topo. ${scene.bassLine?'Linha: '+scene.bassLine.pattern+'. Uma nota por tempo.':scene.kind==='chord'?'Arpejo: toque as notas do acorde em sequência, uma por vez.':'Toque para ouvir. Uma casa corresponde a um semitom.'}`;
   }
+  function selectPiano(scene) {
+    const selected = scene.selected || [];
+    if (!selected.every(n => sourceOf(n) === 'piano' && $('piano-key-' + n.midi))) return false;
+    for (const key of $('instrument-pair').querySelectorAll('[data-midi].chosen')) {
+      key.classList.remove('chosen'); key.setAttribute('aria-pressed', 'false');
+    }
+    for (const n of selected) {
+      const key = $('piano-key-' + n.midi); key.classList.add('chosen'); key.setAttribute('aria-pressed', 'true');
+    }
+    return true;
+  }
   function render(scene, options) {
     const focusedId = document.activeElement?.id;
     const scroll = $('guitar-render').querySelector('.guitar-scroll')?.scrollLeft || 0;
@@ -183,5 +205,5 @@
     }
     if (focusedId && /^(piano-key-|guitar-|bass-|compare-|chord-string-)/.test(focusedId)) $(focusedId)?.focus({ preventScroll: true });
   }
-  root.InstrumentUI = { render, label };
+  root.InstrumentUI = { render, label, selectPiano };
 })(window);
